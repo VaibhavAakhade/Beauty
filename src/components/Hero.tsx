@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Instagram, Phone, ShoppingBag } from "lucide-react";
+import { Instagram, Phone, ShoppingBag, User } from "lucide-react";
 import heroBanner from "@/assets/hero-banner.jpg";
 
 const Hero = () => {
@@ -9,7 +10,7 @@ const Hero = () => {
       element.scrollIntoView({ behavior: "smooth" });
     }
   };
-
+  
   return (
     <section
       id="home"
