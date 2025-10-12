@@ -119,9 +119,9 @@ const Navbar = () => {
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
               {/* ... Nav Links ... */}
-              <button onClick={() => scrollToSection("home")} className="text-foreground hover:text-primary transition-colors font-medium">Home</button>
+              <Link to="/" className="text-foreground hover:text-primary transition-colors font-medium">Home</Link>
               <button onClick={() => scrollToSection("products")} className="text-foreground hover:text-primary transition-colors font-medium">Shop</button>
-              <button onClick={() => scrollToSection("about")} className="text-foreground hover:text-primary transition-colors font-medium">About</button>
+              <Link to="/about" className="text-foreground hover:text-primary transition-colors font-medium">About</Link>
               <button onClick={() => scrollToSection("testimonials")} className="text-foreground hover:text-primary transition-colors font-medium">Reviews</button>
               <button onClick={() => scrollToSection("contact")} className="text-foreground hover:text-primary transition-colors font-medium">Contact</button>
               
@@ -158,9 +158,9 @@ const Navbar = () => {
           {isMobileMenuOpen && (
             <div className="md:hidden py-4 space-y-4 bg-background/95 backdrop-blur-md rounded-b-2xl shadow-soft">
               {/* ... Mobile Nav Links ... */}
-              <button onClick={() => scrollToSection("home")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Home</button>
+              <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Home</Link>
               <button onClick={() => scrollToSection("products")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Shop</button>
-              <button onClick={() => scrollToSection("about")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">About</button>
+              <Link to="/about" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">About</Link>
               <button onClick={() => scrollToSection("testimonials")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Reviews</button>
               <button onClick={() => scrollToSection("contact")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Contact</button>
 
