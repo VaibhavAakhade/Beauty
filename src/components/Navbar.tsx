@@ -14,7 +14,7 @@ const Navbar = () => {
   // 🌟 CONTEXT USAGE: Get user, role, and logout function
   const { user, role, logout } = useAuth();
   const isAuthenticated = !!user;
-  const isAdmin = role === 'admin'; // ⬅️ NEW: Check for admin role
+  const isAdmin = role === 'ADMIN'; // ⬅️ NEW: Check for admin role
 
   useEffect(() => {
     const handleScroll = () => {
@@ -48,11 +48,11 @@ const Navbar = () => {
 
   const getUserDisplayName = () => {
     // Extracts the name part of the email for a friendly greeting
-    const email = user?.email;
-    if (email) {
-        const namePart = email.split('@')[0];
-        // Capitalize first letter of the name part
-        return namePart.charAt(0).toUpperCase() + namePart.slice(1);
+    const name = user.name;
+    if (name) {
+       
+       // Capitalize first letter of the name part
+        return name.charAt(0).toUpperCase() + name.slice(1);
     }
     return "Profile";
   };
