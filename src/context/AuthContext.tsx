@@ -1,15 +1,20 @@
 // src/context/AuthContext.tsx
-// src/context/AuthContext.tsx
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import axios from 'axios';
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { User } from 'firebase/auth';
-import { useFirebaseAuth } from '../hooks/useFirebaseAuth'; 
+interface UserType {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+}
 
 interface AuthContextType {
-  user: User | null;
-  role: string | null; // Exposed role
+  user: UserType | null;
+  role: string | null;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  loading: boolean; // 
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,15 +24,49 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { user, role, logout, loading } = useFirebaseAuth();
+  const [user, setUser] = useState<UserType | null>(null);
+  const [role, setRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Show a loading screen while Firebase initializes
-  if (loading) {
-      return <div className="min-h-screen flex items-center justify-center text-xl font-medium">Loading Application...</div>;
-  }
+  // Check localStorage on app start
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      setRole(parsedUser.role);
+    }
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await axios.post('http://localhost:8080/api/auth/login', {
+        usernameOrEmail: email,
+        password: password,
+      });
+
+      const loggedUser = response.data.user;
+      if (loggedUser) {
+        setUser(loggedUser);
+        setRole(loggedUser.role);
+        localStorage.setItem('user', JSON.stringify(loggedUser));
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setRole(null);
+    localStorage.removeItem('user');
+  };
 
   return (
-    <AuthContext.Provider value={{ user, role, logout, loading }}>
+    <AuthContext.Provider value={{ user, role, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
@@ -35,14 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 };
-// ⚠️ REMEMBER TO WRAP YOUR APP:
-// In your App.tsx or main.tsx:
-// <AuthProvider>
-//   <Navbar />
-//   <Routes>...</Routes>
-// </AuthProvider>

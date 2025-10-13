@@ -22,7 +22,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ element }) => {
   }
 
   // 2. If logged in but not an admin, show access denied
-  if (role !== 'admin') {
+  if (role !== 'ADMIN') {
     return (
       <div className="min-h-screen flex items-center justify-center p-8 bg-gray-50">
         <div className="text-center p-10 bg-white rounded-lg shadow-xl border-t-4 border-red-500">

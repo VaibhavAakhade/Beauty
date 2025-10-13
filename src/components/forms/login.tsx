@@ -2,11 +2,10 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../config/firebase.config";
-import { Mail, Lock, LogIn } from "lucide-react"; // Importing new icons
+import axios from "axios";
+import { Mail, Lock, LogIn } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
-// Assuming this component is passed a prop to close the modal if it's used inside one
 interface LoginComponentProps {
   onClose?: () => void;
 }
@@ -16,26 +15,25 @@ export default function Login({ onClose }: LoginComponentProps) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
+const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
+const handleLogin = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
+  setIsLoading(true);
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // Optional: Close the modal if used within one
-      if (onClose) {
-        onClose();
-      }
-      navigate("/"); // redirect to homepage after login
-    } catch (err: any) {
-      setError("Invalid email or password. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    await login(email, password); // Use AuthContext login
+    navigate("/"); // Navigate to home
+    if (onClose) onClose(); // Close modal if any
+  } catch (err: any) {
+    console.error("Login error:", err);
+    setError(err.response?.data?.message || "Invalid email or password. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -46,7 +44,6 @@ export default function Login({ onClose }: LoginComponentProps) {
         className="bg-card shadow-2xl rounded-3xl p-6 sm:p-10 w-full max-w-sm border border-primary/20 backdrop-blur-sm"
       >
         <div className="text-center mb-8">
-          {/* Logo element for brand consistency */}
           <div className="inline-flex items-center space-x-2 mb-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
               <span className="text-white font-display font-bold text-lg">L</span>
@@ -114,7 +111,10 @@ export default function Login({ onClose }: LoginComponentProps) {
 
           {/* Forgot Password Link */}
           <div className="flex justify-end">
-            <Link to="/forgot-password" className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+            <Link
+              to="/forgot-password"
+              className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+            >
               Forgot password?
             </Link>
           </div>
@@ -126,9 +126,18 @@ export default function Login({ onClose }: LoginComponentProps) {
             disabled={isLoading}
           >
             {isLoading ? (
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             ) : (
               <>
@@ -144,7 +153,7 @@ export default function Login({ onClose }: LoginComponentProps) {
           <Link
             to="/register"
             className="text-primary hover:text-primary/80 font-semibold transition-colors"
-            onClick={onClose} // Close modal on link click
+            onClick={onClose}
           >
             Register Now
           </Link>
