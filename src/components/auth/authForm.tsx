@@ -2,7 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 
 export function AuthForm() {
-  const API_URL = "http://localhost:8080/api/auth";
+  const API_URL = "http://localhost:8085/api/auth";
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));

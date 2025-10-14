@@ -8,6 +8,8 @@ import { auth } from "../../config/firebase.config";
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -15,23 +17,35 @@ export default function Register() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
+  
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-      // Set user display name
-      await updateProfile(userCredential.user, { displayName: name });
-
-      navigate("/"); // redirect to homepage
+      const response = await fetch("http://localhost:8085/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          phone: "", // Add an input if needed
+          username: email, // or separate field
+          password,
+        }),
+      });
+  
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.message || "Failed to create account");
+      }
+  
+      const result = await response.json();
+      console.log("User created:", result);
+  
+      // Redirect or show success message
+      navigate("/login");
     } catch (err: any) {
-      setError("Failed to create account. Try again.");
+      setError(err.message || "Something went wrong");
     }
   };
-
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 via-background to-primary/10">
       <motion.div
@@ -66,6 +80,19 @@ export default function Register() {
 
           <div>
             <label className="block text-sm font-medium text-muted-foreground mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
               Email Address
             </label>
             <input
@@ -73,6 +100,18 @@ export default function Register() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              className="w-full rounded-lg border border-border bg-background px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-muted-foreground mb-1">
+              Phone Number
+            </label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               className="w-full rounded-lg border border-border bg-background px-4 py-2 focus:ring-2 focus:ring-primary outline-none transition"
             />
           </div>

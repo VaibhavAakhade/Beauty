@@ -25,7 +25,7 @@ export function AddProductForm() {
       const imageUrl = await uploadProductImage(file);
 
       // Step 2: Send product metadata to Spring Boot backend
-      const response = await fetch("http://localhost:8080/api/products", {
+      const response = await fetch("http://localhost:8085/api/products", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

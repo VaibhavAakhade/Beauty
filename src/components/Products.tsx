@@ -1,86 +1,52 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Star } from "lucide-react";
-import productSerum from "@/assets/product-serum.jpg";
-import productCream from "@/assets/product-cream.jpg";
-import productOil from "@/assets/product-oil.jpg";
-import productMakeup from "@/assets/product-makeup.jpg";
-import productHaircare from "@/assets/product-haircare.jpg";
-import productLipstick from "@/assets/product-lipstick.jpg";
 
-const products = [
-  {
-    id: 1,
-    name: "Radiance Vitamin C Serum",
-    category: "Skincare",
-    price: 49.99,
-    image: productSerum,
-    badge: "Bestseller",
-    rating: 4.8,
-    description: "Brightening serum with natural vitamin C and hyaluronic acid",
-  },
-  {
-    id: 2,
-    name: "Hydrating Night Cream",
-    category: "Skincare",
-    price: 39.99,
-    image: productCream,
-    badge: "New",
-    rating: 4.9,
-    description: "Luxurious night cream with botanical extracts",
-  },
-  {
-    id: 3,
-    name: "Organic Beauty Oil",
-    category: "Skincare",
-    price: 34.99,
-    image: productOil,
-    badge: "Hot",
-    rating: 4.7,
-    description: "Multi-purpose organic oil for face, body, and hair",
-  },
-  {
-    id: 4,
-    name: "Rose Gold Eyeshadow Palette",
-    category: "Makeup",
-    price: 54.99,
-    image: productMakeup,
-    badge: "Bestseller",
-    rating: 5.0,
-    description: "12 pigmented shades in warm rose gold tones",
-  },
-  {
-    id: 5,
-    name: "Natural Hair Care Set",
-    category: "Haircare",
-    price: 44.99,
-    image: productHaircare,
-    rating: 4.6,
-    description: "Organic shampoo and conditioner duo",
-  },
-  {
-    id: 6,
-    name: "Velvet Matte Lipstick",
-    category: "Makeup",
-    price: 24.99,
-    image: productLipstick,
-    badge: "New",
-    rating: 4.8,
-    description: "Long-lasting matte lipstick in rose shades",
-  },
-];
+interface Product {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+  imageUrl: string;
+  badge?: string;
+  rating: number;
+  description: string;
+}
 
 const categories = ["All", "Skincare", "Makeup", "Haircare"];
 
 const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const filteredProducts =
-    selectedCategory === "All"
-      ? products
-      : products.filter((p) => p.category === selectedCategory);
+  const fetchProducts = async (category?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      let url = "http://localhost:8085/api/products";
+      if (category && category !== "All") {
+        url += `?category=${category}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+      setProducts(data);
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch products on mount & whenever category changes
+  useEffect(() => {
+    fetchProducts(selectedCategory);
+  }, [selectedCategory]);
 
   return (
     <section id="products" className="py-20 bg-gradient-subtle">
@@ -90,9 +56,7 @@ const Products = () => {
             Our <span className="text-gradient">Premium Collection</span>
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Discover our carefully curated selection of beauty essentials, all
-            crafted with natural ingredients and designed to enhance your
-            natural radiance.
+            Discover our carefully curated selection of beauty essentials.
           </p>
         </div>
 
@@ -114,16 +78,19 @@ const Products = () => {
           ))}
         </div>
 
+        {loading && <p className="text-center">Loading products...</p>}
+        {error && <p className="text-center text-red-500">{error}</p>}
+
         {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((product) => (
+          {products.map((product) => (
             <Card
               key={product.id}
               className="group overflow-hidden border-border hover:shadow-elegant transition-all duration-300 hover-lift"
             >
               <div className="relative overflow-hidden">
                 <img
-                  src={product.image}
+                  src={product.imageUrl}
                   alt={product.name}
                   className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
@@ -148,9 +115,7 @@ const Products = () => {
                   </span>
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="text-sm font-medium">
-                      {product.rating}
-                    </span>
+                    <span className="text-sm font-medium">{product.rating}</span>
                   </div>
                 </div>
                 <h3 className="font-display text-xl font-semibold mb-2">
