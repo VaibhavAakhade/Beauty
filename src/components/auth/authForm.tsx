@@ -1,8 +1,8 @@
 import { useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/config/axiosConfig";
 
 export function AuthForm() {
-  const API_URL = "http://localhost:8085/api/auth";
+  const API_URL = "/auth";
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
   const [password, setPassword] = useState("");
   const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
@@ -10,7 +10,7 @@ export function AuthForm() {
 
   const login = async () => {
     try {
-      const res = await axios.post(`${API_URL}/login`, { usernameOrEmail, password });
+      const res = await axiosInstance.post(`${API_URL}/login`, { usernameOrEmail, password });
       
       // Assuming your AuthenticationService returns a JWT token as response body
       const jwtToken = res.data.token || res.data; // support both formats
@@ -30,7 +30,7 @@ export function AuthForm() {
 
   const logout = async () => {
     try {
-      await axios.post(`${API_URL}/logout`, {}, {
+      await axiosInstance.post(`${API_URL}/logout`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
     } catch (err) {

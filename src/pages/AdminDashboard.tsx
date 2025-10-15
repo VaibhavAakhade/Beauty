@@ -2,9 +2,7 @@ import { useState } from "react";
 import { PlusCircle, List, UploadCloud, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button"; 
 import {AddProductForm } from "../pages/addProduct";
-
-
-// import ProductList from "./ProductList";       // separate file
+import ProductList from "../components/admin/ProductList";       // separate file
 // import BulkUpload from "./BulkUpload";         // separate file
 
 type ActiveTab = "HOME" | "ADD" | "LIST" | "BULK";
@@ -16,8 +14,8 @@ export default function AdminDashboard() {
     switch (activeTab) {
       case "ADD":
         return <AddProductForm />;
-    //   case "LIST":
-    //     return <ProductList />;
+      case "LIST":
+        return <ProductList />;
     //   case "BULK":
     //     return <BulkUpload />;
       default:

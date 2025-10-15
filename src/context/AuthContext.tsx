@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import axiosInstance from "../config/axiosConfig"
 
 interface UserType {
   id: number;
@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const response = await axios.post('http://localhost:8085/api/auth/login', {
+      const response = await axiosInstance.post('/auth/login', {
         usernameOrEmail: email,
         password: password,
       });

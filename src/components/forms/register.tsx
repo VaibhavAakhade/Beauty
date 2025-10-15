@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../../config/firebase.config";
+import axiosInstance from "@/config/axiosConfig";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -19,32 +18,29 @@ export default function Register() {
     setError(null);
   
     try {
-      const response = await fetch("http://localhost:8085/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const response = await axiosInstance.post("/users", {
           name,
           email,
-          phone: "", // Add an input if needed
+          phone, // Add an input if needed
           username: email, // or separate field
           password,
-        }),
       });
-  
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.message || "Failed to create account");
-      }
-  
-      const result = await response.json();
-      console.log("User created:", result);
-  
-      // Redirect or show success message
-      navigate("/login");
+
+    const result = response.data;
+
+     console.log("User created:", result);
+     // Redirect to login on success
+     navigate("/login");
+      
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    }
-  };
+      console.error("Registration error:", err);
+// Extract specific error message from the backend response if available
+      const errorMessage = err.response?.data?.message 
+              || err.message 
+              || "Failed to create account. Please try again.";
+      setError(errorMessage);
+      }
+    };
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-accent/10 via-background to-primary/10">

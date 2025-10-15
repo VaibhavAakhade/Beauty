@@ -1,14 +1,14 @@
-import axios from "axios";
+import AxiosInstance  from "../config/axiosConfig";
 
-const API_URL = "http://localhost:8085/api/auth";
+const API_URL = "/auth";
 
 export const register = async (email: string, password: string) => {
-  return axios.post(`${API_URL}/register`, { email, password });
+  return AxiosInstance.post(`${API_URL}/register`, { email, password });
 };
 
 export const login = async (email: string, password: string) => {
-  const response = await axios.post(`${API_URL}/login`, { email, password });
-  const token = response.data;
+  const response = AxiosInstance.post(`${API_URL}/login`, { email, password });
+  const token = (await response).data;
   localStorage.setItem("token", token);
   return token;
 };
