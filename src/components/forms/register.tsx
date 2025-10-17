@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import axiosInstance from "@/config/axiosConfig";
+import axiosInstance from "@/api/axiosConfig";
 
 export default function Register() {
   const [name, setName] = useState("");

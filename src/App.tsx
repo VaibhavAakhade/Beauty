@@ -10,7 +10,9 @@ import Login from "./components/forms/login";
 import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "@/context/AuthContext";
-
+import CartPage from "./pages/CartPage";
+import OrdersPage from "./pages/OrdersPage";
+import { CartProvider } from "./context/CartContext";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -20,6 +22,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
       <AuthProvider>  
+      <CartProvider>
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/register" element={<Register />} />
@@ -31,7 +34,10 @@ const App = () => (
           <Route path="/login" element={<Login/>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
+          <Route path="/cart" element={<CartPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
         </Routes>
+        </CartProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

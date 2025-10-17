@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Product } from "../../types/product";
-import axiosInstance from "../../config/axiosConfig"; // Assumed path
+import axiosInstance from "../../api/axiosConfig"; // Assumed path
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Edit, Trash2, Loader2, XCircle } from "lucide-react";

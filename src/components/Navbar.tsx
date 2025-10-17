@@ -1,33 +1,28 @@
-// src/components/Navbar.tsx (UPGRADED)
+// src/components/Navbar.tsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // ⬅️ NEW: Import Link for navigation
-import { Menu, X, ShoppingBag, User, LogOut, Shield } from "lucide-react"; // Import Shield for Admin
+import { Link } from "react-router-dom";
+import { Menu, X, ShoppingBag, User, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Login from "./forms/login"; // Assuming path: ./forms/login
-import { useAuth } from "../context/AuthContext"; // Import the useAuth hook
+import Login from "./forms/login";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "@/context/CartContext";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  
-  // 🌟 CONTEXT USAGE: Get user, role, and logout function
+
+  const { cartItems = [], resetCart } = useCart(); // ✅ added resetCart
+  const cartCount = cartItems.reduce((sum, it) => sum + it.quantity, 0);
+
   const { user, role, logout } = useAuth();
   const isAuthenticated = !!user;
-  const isAdmin = role === 'ADMIN'; // ⬅️ NEW: Check for admin role
+  const isAdmin = role === "ADMIN";
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const handleOpenAuth = () => setShowAuthModal(true);
-    window.addEventListener("openAuthModal", handleOpenAuth);
-    return () => window.removeEventListener("openAuthModal", handleOpenAuth);
   }, []);
 
   const scrollToSection = (id: string) => {
@@ -39,40 +34,43 @@ const Navbar = () => {
   };
 
   const handleLoginClick = () => {
-    // Only show the modal if the user is NOT authenticated
-    if (!isAuthenticated) {
-        const event = new CustomEvent("openAuthModal");
-        window.dispatchEvent(event);
-    }
+    if (!isAuthenticated) setShowAuthModal(true);
+  };
+
+  // ✅ Updated logout function (clears cart too)
+  const handleLogout = () => {
+    logout(); // clears token/session
+    resetCart(); // clears cart context
   };
 
   const getUserDisplayName = () => {
-    // Extracts the name part of the email for a friendly greeting
-    const name = user.name;
-    if (name) {
-       
-       // Capitalize first letter of the name part
-        return name.charAt(0).toUpperCase() + name.slice(1);
-    }
+    const name = user?.name;
+    if (name) return name.charAt(0).toUpperCase() + name.slice(1);
     return "Profile";
   };
 
-  // Helper component for the Auth/User display
   const AuthUserDisplay = ({ isMobile = false }) => {
     if (isAuthenticated) {
       return (
-        // AUTHENTICATED STATE: Show Welcome message and Logout button
-        <div className={`flex items-center space-x-2 ${isMobile ? "w-full flex-col space-y-3" : ""}`}>
-          <span 
-            className={`font-semibold text-sm text-primary transition-colors ${isMobile ? "w-full text-center" : "hidden sm:inline-block"}`}
+        <div
+          className={`flex items-center space-x-2 ${
+            isMobile ? "flex-col space-y-2 w-full" : ""
+          }`}
+        >
+          <span
+            className={`${
+              isMobile ? "w-full text-center" : "hidden sm:inline-block"
+            } font-semibold text-sm text-primary`}
           >
             Welcome, {getUserDisplayName()} ✨
           </span>
           <Button
             size="sm"
             variant="outline"
-            onClick={logout} // Call context logout
-            className={`${isMobile ? "w-full" : ""} border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors`}
+            onClick={handleLogout} // ✅ updated here
+            className={`${
+              isMobile ? "w-full" : ""
+            } border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full`}
           >
             <LogOut className="w-4 h-4 mr-2" />
             Logout
@@ -82,12 +80,13 @@ const Navbar = () => {
     }
 
     return (
-      // LOGGED OUT STATE: Show Login/Signup button
       <Button
         size="sm"
         variant="outline"
         onClick={handleLoginClick}
-        className={`${isMobile ? "w-full" : "w-auto"} border-2 border-spacing-2 text-secondary hover:bg-secondary text-black rounded-full`}
+        className={`${
+          isMobile ? "w-full" : "w-auto"
+        } border-2 border-spacing-2 text-secondary hover:bg-secondary text-black rounded-full`}
       >
         <User className="w-4 h-4 mr-2" />
         Login / Signup
@@ -106,10 +105,12 @@ const Navbar = () => {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-20">
-            {/* ... Logo Section ... */}
+            {/* Logo */}
             <div className="flex items-center space-x-2">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                <span className="text-white font-display font-bold text-xl">L</span>
+                <span className="text-white font-display font-bold text-xl">
+                  L
+                </span>
               </div>
               <span className="font-display text-2xl font-bold text-gradient">
                 Luxe Beauty
@@ -117,31 +118,59 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {/* ... Nav Links ... */}
-              <button onClick={() => scrollToSection("home")} className="text-foreground hover:text-primary transition-colors font-medium">Home</button>
-              <button onClick={() => scrollToSection("products")} className="text-foreground hover:text-primary transition-colors font-medium">Shop</button>
-              <button onClick={() => scrollToSection("about")} className="text-foreground hover:text-primary transition-colors font-medium">About</button>
-              <button onClick={() => scrollToSection("testimonials")} className="text-foreground hover:text-primary transition-colors font-medium">Reviews</button>
-              <button onClick={() => scrollToSection("contact")} className="text-foreground hover:text-primary transition-colors font-medium">Contact</button>
-              
-              {/* 🚀 ADMIN LINK FOR DESKTOP */}
+            <div className="hidden md:flex items-center space-x-6">
+              <button
+                onClick={() => scrollToSection("home")}
+                className="text-foreground hover:text-primary font-medium"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection("products")}
+                className="text-foreground hover:text-primary font-medium"
+              >
+                Shop
+              </button>
+              <button
+                onClick={() => scrollToSection("about")}
+                className="text-foreground hover:text-primary font-medium"
+              >
+                About
+              </button>
+              <button
+                onClick={() => scrollToSection("testimonials")}
+                className="text-foreground hover:text-primary font-medium"
+              >
+                Reviews
+              </button>
+              <button
+                onClick={() => scrollToSection("contact")}
+                className="text-foreground hover:text-primary font-medium"
+              >
+                Contact
+              </button>
+
+              {/* Admin Link */}
               {isAdmin && (
-                <Link 
-                  to="/admin" 
-                  className="text-primary hover:text-primary/80 transition-colors font-medium border-2 border-primary/50 px-3 py-1 rounded-full text-sm flex items-center"
+                <Link
+                  to="/admin"
+                  className="text-primary hover:text-primary/80 border-2 border-primary/50 px-3 py-1 rounded-full text-sm flex items-center"
                 >
-                  <Shield className="w-4 h-4 mr-1" />
-                  Admin Dashboard
+                  <Shield className="w-4 h-4 mr-1" /> Admin
                 </Link>
               )}
-              
-              <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
-                <ShoppingBag className="w-4 h-4 mr-2" />
-                Shop Now
-              </Button>
 
-              {/* Display Auth/User Button for Desktop */}
+              {/* Cart Button */}
+              <Link to="/cart" className="relative">
+                <ShoppingBag className="w-6 h-6 text-primary" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* User/Auth */}
               <AuthUserDisplay />
             </div>
 
@@ -157,40 +186,65 @@ const Navbar = () => {
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
             <div className="md:hidden py-4 space-y-4 bg-background/95 backdrop-blur-md rounded-b-2xl shadow-soft">
-              {/* ... Mobile Nav Links ... */}
-              <button onClick={() => scrollToSection("home")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Home</button>
-              <button onClick={() => scrollToSection("products")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Shop</button>
-              <button onClick={() => scrollToSection("about")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">About</button>
-              <button onClick={() => scrollToSection("testimonials")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Reviews</button>
-              <button onClick={() => scrollToSection("contact")} className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors">Contact</button>
+              <button
+                onClick={() => scrollToSection("home")}
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              >
+                Home
+              </button>
+              <button
+                onClick={() => scrollToSection("products")}
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              >
+                Shop
+              </button>
+              <button
+                onClick={() => scrollToSection("about")}
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              >
+                About
+              </button>
+              <button
+                onClick={() => scrollToSection("testimonials")}
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              >
+                Reviews
+              </button>
+              <button
+                onClick={() => scrollToSection("contact")}
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+              >
+                Contact
+              </button>
 
-              <div className="px-4 space-y-3">
-                {/* 🚀 ADMIN LINK FOR MOBILE */}
-                {isAdmin && (
-                  <Link 
-                    to="/admin" 
-                    onClick={() => setIsMobileMenuOpen(false)} // Close menu on click
-                    className="block w-full text-center text-primary hover:text-primary/80 transition-colors font-medium border-2 border-primary/50 px-4 py-2 rounded-full text-sm flex items-center justify-center"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    Admin Dashboard
-                  </Link>
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full text-center text-primary hover:text-primary/80 border-2 border-primary/50 px-4 py-2 rounded-full text-sm flex items-center justify-center"
+                >
+                  <Shield className="w-4 h-4 mr-2" /> Admin
+                </Link>
+              )}
+
+              {/* Cart Button */}
+              <Link to="/cart" className="relative block w-full text-center">
+                <ShoppingBag className="w-6 h-6 mx-auto" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                    {cartCount}
+                  </span>
                 )}
+                <span className="text-sm mt-1 block">Cart</span>
+              </Link>
 
-                <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-full">
-                  <ShoppingBag className="w-4 h-4 mr-2" />
-                  Shop Now
-                </Button>
-                
-                {/* Display Auth/User Button for Mobile */}
-                <AuthUserDisplay isMobile={true} />
-              </div>
+              <AuthUserDisplay isMobile={true} />
             </div>
           )}
         </div>
       </nav>
 
-      {/* Auth Modal (No change needed) */}
+      {/* Auth Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
           <div className="bg-white rounded-xl p-6 w-full max-w-md relative">

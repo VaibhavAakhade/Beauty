@@ -1,95 +1,86 @@
-// src/context/CartContext.tsx
+import { createContext, useContext, useState, useEffect } from "react";
+import { getCartItems, addToCart as apiAddToCart } from "@/api/cartApi";
+import { useAuth } from "@/context/AuthContext";
 
-import React, { createContext, useContext, useState, useMemo, ReactNode } from 'react';
-import { Product, CartItem } from '../types/product'; // Assuming you put types in a file
-
-// 1. Define the Context Shape (what components consume)
-interface CartContextType {
-  cart: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: number) => void;
-  updateQuantity: (productId: number, newQuantity: number) => void;
-  getTotalItems: () => number;
-  getTotalPrice: () => number;
+interface CartItem {
+  id: number;
+  productId: number;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice:number;
+  productImageUrl: string;
 }
 
-// 2. Create the Context
+interface CartContextType {
+  cartItems: CartItem[];
+  fetchCart: () => Promise<void>;
+  addToCart: (productId: number, quantity?: number) => Promise<void>;
+  resetCart: () => void;
+}
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// 3. Create the Provider Component
-interface CartProviderProps {
-  children: ReactNode;
-}
+export const CartProvider = ({ children }: { children: React.ReactNode }) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
 
-export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  // Core Logic: Add Item to Cart
-  const addItem = (product: Product, quantity: number = 1) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.id === product.id);
-
-      if (existingItem) {
-        // Update quantity if item exists
-        return prevCart.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      } else {
-        // Add new item
-        return [...prevCart, { ...product, quantity }];
-      }
-    });
-  };
-
-  // Core Logic: Remove Item from Cart
-  const removeItem = (productId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  };
-
-  // Core Logic: Update Item Quantity
-  const updateQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      removeItem(productId);
+  // ✅ Fetch cart for logged-in user
+  const fetchCart = async () => {
+    if (!user) {
+      setCartItems([]);
       return;
     }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    const response = await getCartItems(user.id);
+    setCartItems(response.data);
   };
 
-  // Memoized function for total items count
-  const getTotalItems = () => cart.reduce((total, item) => total + item.quantity, 0);
+  // ✅ Add to cart and update state instantly
+  const addToCart = async (productId: number, quantity: number = 1) => {
+    if (!user) {
+      alert("Please login first!");
+      return;
+    }
 
-  // Memoized function for total cart price
-  const getTotalPrice = () => cart.reduce((total, item) => total + item.price * item.quantity, 0);
+    try {
+      await apiAddToCart(user.id, productId, quantity);
+      // 🔥 Update frontend state instantly
+      const existingItem = cartItems.find(item => item.productId === productId);
+      if (existingItem) {
+        setCartItems(prev =>
+          prev.map(item =>
+            item.productId === productId
+              ? { ...item, quantity: item.quantity + quantity }
+              : item
+          )
+        );
+      } else {
+        // Fetch new product details or refetch full cart
+        await fetchCart();
+      }
+    } catch (err) {
+      console.error("Failed to add to cart", err);
+    }
+  };
 
+  // ✅ Clear cart when user logs out
+  const resetCart = () => setCartItems([]);
 
-  // Memoize the context value to prevent unnecessary re-renders
-  const contextValue = useMemo(() => ({
-    cart,
-    addItem,
-    removeItem,
-    updateQuantity,
-    getTotalItems,
-    getTotalPrice,
-  }), [cart]);
+  // Load cart when user changes
+  useEffect(() => {
+    if (user) fetchCart();
+    else setCartItems([]);
+  }, [user]);
 
   return (
-    <CartContext.Provider value={contextValue}>
+    <CartContext.Provider value={{ cartItems, fetchCart, addToCart, resetCart }}>
       {children}
     </CartContext.Provider>
   );
 };
 
-// 4. Custom Hook for easy consumption
-export const useCart = (): CartContextType => {
+export const useCart = () => {
   const context = useContext(CartContext);
-  if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
+  if (!context) throw new Error("useCart must be used within CartProvider");
   return context;
 };
