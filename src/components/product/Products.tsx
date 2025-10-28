@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Star } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useCart } from "@/context/CartContext"; // ✅ import Cart context
 
 interface Product {
   id: number;
@@ -23,14 +25,25 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { user } = useAuth();
+  const { addToCart } = useCart(); // ✅ use context method
+
+  const handleAddToCart = async (productId: number) => {
+    if (!user) {
+      alert("Please log in to add items to cart.");
+      return;
+    }
+
+    await addToCart(productId, 1);
+    alert("Added to cart!");
+  };
+
   const fetchProducts = async (category?: string) => {
     setLoading(true);
     setError(null);
     try {
       let url = "http://localhost:8085/api/products";
-      if (category && category !== "All") {
-        url += `?category=${category}`;
-      }
+      if (category && category !== "All") url += `?category=${category}`;
 
       const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch products");
@@ -43,7 +56,6 @@ const Products = () => {
     }
   };
 
-  // Fetch products on mount & whenever category changes
   useEffect(() => {
     fetchProducts(selectedCategory);
   }, [selectedCategory]);
@@ -115,7 +127,9 @@ const Products = () => {
                   </span>
                   <div className="flex items-center space-x-1">
                     <Star className="w-4 h-4 fill-accent text-accent" />
-                    <span className="text-sm font-medium">{product.rating}</span>
+                    <span className="text-sm font-medium">
+                      {product.rating}
+                    </span>
                   </div>
                 </div>
                 <h3 className="font-display text-xl font-semibold mb-2">
@@ -131,6 +145,7 @@ const Products = () => {
                   <Button
                     size="sm"
                     className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full"
+                    onClick={() => handleAddToCart(product.id)}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     Add to Cart

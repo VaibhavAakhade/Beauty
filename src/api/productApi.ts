@@ -1,4 +1,4 @@
-import AxiosInstance from "../config/axiosConfig";
+import AxiosInstance from "./axiosConfig";
 
 const API_URL = "/auth";
 

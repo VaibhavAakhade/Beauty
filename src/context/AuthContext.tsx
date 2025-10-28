@@ -1,6 +1,6 @@
 // src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import axiosInstance from "../config/axiosConfig"
+import axiosInstance from "../api/axiosConfig"
 
 interface UserType {
   id: number;

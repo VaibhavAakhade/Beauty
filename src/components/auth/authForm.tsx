@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axiosInstance from "@/config/axiosConfig";
+import axiosInstance from "@/api/axiosConfig";
 
 export function AuthForm() {
   const API_URL = "/auth";
