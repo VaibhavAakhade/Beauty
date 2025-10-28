@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { uploadProductImage } from "@/services/storageService"; // Upload helper to Firebase Storage
+import { uploadProductImage } from "@/services/storageService"; // Upload helper to cloudnary Storage
 
 export function AddProductForm() {
   const [name, setName] = useState("");
@@ -21,7 +21,7 @@ export function AddProductForm() {
     setIsLoading(true);
 
     try {
-      // Step 1: Upload image to Firebase Storage
+      // Step 1: Upload image to cloud Storage
       const imageUrl = await uploadProductImage(file);
 
       // Step 2: Send product metadata to Spring Boot backend

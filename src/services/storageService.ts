@@ -1,8 +1,14 @@
-import { storage } from "../config/firebase.config";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import axios from "axios";
 
-export const uploadProductImage = async (file: File) => {
-  const storageRef = ref(storage, `products/${file.name}`);
-  await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
+export const uploadProductImage = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await axios.post(
+    "http://localhost:8085/api/products/upload-image",
+    formData,
+    { headers: { "Content-Type": "multipart/form-data" } }
+  );
+
+  return response.data.imageUrl; // Cloudinary URL
 };
