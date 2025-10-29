@@ -19,15 +19,15 @@ interface Product {
 
 const categories = [
   "All",
-  "HairCare",
-  "Skincare",
-  "Bath&BodyCare",
-  "Makeup",
-  "Beauty",
-  "Gifting",
-  "Travel Packs",
-  "Hand Care",
-  "Exclusives",
+  "HAIR_AND_CARE",
+  "SKINCARE" ,
+  "BATH_AND_BODYCARE",
+  "MAKEUP",
+  "BEAUTY",
+  "GIFTING",
+  "TRAVEL_PACKS",
+  "HAND_CARE",
+  "EXCLUSIVES",
 ];
 
 const Products = () => {
