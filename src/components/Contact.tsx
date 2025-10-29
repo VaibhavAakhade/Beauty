@@ -6,11 +6,11 @@ import { Instagram, Phone, Mail, MapPin, MessageCircle } from "lucide-react";
 
 const Contact = () => {
   const handleWhatsApp = () => {
-    window.open("https://wa.me/1234567890", "_blank");
+    window.open("https://wa.me/7068187878", "_blank");
   };
 
   const handleCall = () => {
-    window.location.href = "tel:+1234567890";
+    window.location.href = "tel:+917068187878";
   };
 
   return (
@@ -80,6 +80,27 @@ const Contact = () => {
                   Send Message
                 </Button>
               </form>
+
+              {/* Operating Hours */}
+              <div className="mt-8 pt-8 border-t">
+                <h4 className="font-display text-xl font-semibold mb-4">
+                  Operating Hours
+                </h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Monday - Saturday</span>
+                    <span className="font-medium">10:00 AM - 6:00 PM</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Sunday</span>
+                    <span className="font-medium">Closed</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-4">
+                    Visit us during business hours for personalized consultations.
+                    Walk-ins welcome!
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -104,7 +125,7 @@ const Contact = () => {
                       className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-full"
                     >
                       <Phone className="w-4 h-4 mr-2" />
-                      +1 (234) 567-8900
+                      +91 7068187878
                     </Button>
                   </div>
                 </div>
@@ -147,7 +168,7 @@ const Contact = () => {
                       Email
                     </h3>
                     <p className="text-muted-foreground mb-2">
-                      hello@luxebeauty.com
+                      srjnupadhyay@gmail.com
                     </p>
                     <p className="text-sm text-muted-foreground">
                       We'll respond within 24 hours
@@ -168,38 +189,14 @@ const Contact = () => {
                       Visit Our Studio
                     </h3>
                     <p className="text-muted-foreground">
-                      123 Beauty Lane, Cosmetic District
+                      Pune University Road, Sector 11
                       <br />
-                      New York, NY 10001
+                      Pune - 411057, Maharashtra, India
                     </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
-
-        {/* Social Media */}
-        <div className="mt-16 text-center">
-          <h3 className="font-display text-2xl font-semibold mb-6">
-            Follow Our Beauty Journey
-          </h3>
-          <div className="flex justify-center space-x-4">
-            <Button
-              size="lg"
-              variant="outline"
-              className="border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground rounded-full"
-              asChild
-            >
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Instagram className="w-5 h-5 mr-2" />
-                Instagram
-              </a>
-            </Button>
           </div>
         </div>
       </div>
