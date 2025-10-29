@@ -5,10 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext"; // ✅ import Cart context
+import { Link } from "react-router-dom";
+
 
 interface Product {
   id: number;
-  name: string;
+  productName: string;
   category: string;
   price: number;
   imageUrl: string;
@@ -108,13 +110,14 @@ const Products = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
             <Card
-              key={product.id}
-              className="group overflow-hidden border-border hover:shadow-elegant transition-all duration-300 hover-lift"
-            >
+            key={product.id}
+            className="group overflow-hidden border-border hover:shadow-elegant transition-all duration-300 hover-lift"
+          >
+            <Link to={`/product/${product.id}`}>
               <div className="relative overflow-hidden">
                 <img
                   src={product.imageUrl}
-                  alt={product.name}
+                  alt={product.productName}
                   className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 {product.badge && (
@@ -131,6 +134,7 @@ const Products = () => {
                   </Badge>
                 )}
               </div>
+              </Link>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm text-muted-foreground">
