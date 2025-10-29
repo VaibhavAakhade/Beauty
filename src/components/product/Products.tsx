@@ -17,7 +17,18 @@ interface Product {
   description: string;
 }
 
-const categories = ["All", "Skincare", "Makeup", "Haircare"];
+const categories = [
+  "All",
+  "HairCare",
+  "Skincare",
+  "Bath&BodyCare",
+  "Makeup",
+  "Beauty",
+  "Gifting",
+  "Travel Packs",
+  "Hand Care",
+  "Exclusives",
+];
 
 const Products = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -59,7 +70,7 @@ const Products = () => {
   useEffect(() => {
     fetchProducts(selectedCategory);
   }, [selectedCategory]);
-
+  
   return (
     <section id="products" className="py-20 bg-gradient-subtle">
       <div className="container mx-auto px-4">

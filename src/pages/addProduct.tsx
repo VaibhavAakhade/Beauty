@@ -81,6 +81,10 @@ export function AddProductForm() {
         <option value="SKINCARE">Skincare</option>
         <option value="BATH_AND_BODYCARE">BATH_AND_BODYCARE</option>
         <option value="MAKEUP">MAKEUP</option>
+        <option value="MAKEUP">BEAUTY</option>
+        <option value="MAKEUP">TRAVEL_PACKS</option>
+        <option value="MAKEUP">HAND_CARE</option>
+        <option value="MAKEUP">EXCLUSIVES</option>
       </select>
 
       <select value={tag} onChange={e => setTag(e.target.value)} className="w-full px-4 py-2 border rounded">
