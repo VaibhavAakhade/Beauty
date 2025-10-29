@@ -144,14 +144,14 @@ const Products = () => {
                   </div>
                 </div>
                 <h3 className="font-display text-xl font-semibold mb-2">
-                  {product.name}
+                  {product.productName}
                 </h3>
                 <p className="text-muted-foreground text-sm mb-4">
                   {product.description}
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="font-display text-2xl font-bold text-primary">
-                    ${product.price}
+                  ₹{product.price}
                   </span>
                   <Button
                     size="sm"
