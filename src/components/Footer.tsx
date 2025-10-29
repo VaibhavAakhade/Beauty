@@ -1,4 +1,4 @@
-import { Instagram, Facebook, Youtube, Mail, Phone } from "lucide-react";
+import { Instagram, Facebook, Youtube, Mail, Phone, Linkedin } from "lucide-react";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -47,6 +47,14 @@ const Footer = () => {
                 className="w-10 h-10 rounded-full bg-background/10 hover:bg-primary transition-colors flex items-center justify-center"
               >
                 <Youtube className="w-5 h-5" />
+              </a>
+              <a
+                href="https://linkedin.com/company/beautybloom-studio"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-background/10 hover:bg-primary transition-colors flex items-center justify-center"
+              >
+                <Linkedin className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -111,11 +119,11 @@ const Footer = () => {
             <ul className="space-y-3 text-background/70">
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4" />
-                <span>+1 (234) 567-8900</span>
+                <span>+91 7068187878</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span>hello@luxebeauty.com</span>
+                <span>srjnupadhyay@gmail.com</span>
               </li>
             </ul>
           </div>
