@@ -101,7 +101,7 @@ export default function ProductList() {
                                     <div className="text-sm text-muted-foreground">{product.sku}</div>
                                 </TableCell>
                                 <TableCell>{product.category}</TableCell>
-                                <TableCell>${product.price.toFixed(2)}</TableCell>
+                                <TableCell>₹{product.price.toFixed(2)}</TableCell>
                                 <TableCell className="text-center">{product.totalUnits}</TableCell>
                                 <TableCell className="text-center space-x-2">
                                     <Badge 

@@ -41,7 +41,7 @@ const OrderCard: FC<OrderCardProps> = ({ orderId, date, status, items, total }) 
                 <div>
                   <p className="font-medium">{item.productName}</p>
                   <p className="text-sm text-muted-foreground">
-                    {item.quantity} × ₹{item.price}
+                    {item.quantity} ₹{item.price}
                   </p>
                 </div>
               </div>
