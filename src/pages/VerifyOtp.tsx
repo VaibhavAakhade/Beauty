@@ -37,7 +37,7 @@ export default function VerifyOtp() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleVerify} className="w-full max-w-md bg-card p-8 rounded-xl shadow">
-        <h2 className="text-2xl font-semibold mb-4">Verify OTP</h2>
+        <h2 className="text-2xl font-semibold mb-4 fade-in slide-up">Verify OTP</h2>
         <p className="text-sm text-muted-foreground mb-4">Enter the one-time code sent to <strong>{email}</strong>.</p>
         {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
         <label className="block mb-2 text-sm">OTP Code</label>

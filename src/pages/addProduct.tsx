@@ -112,7 +112,7 @@ export function AddProductForm({ productToEdit, onSaved }: Props) {
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto p-4 bg-card rounded-lg shadow">
       {productToEdit && (
         <div className="p-3 bg-muted rounded-md">
-          <h3 className="text-lg font-semibold">Editing: {productToEdit.productName} <span className="text-sm text-muted-foreground">#{productToEdit.id}</span></h3>
+          <h3 className="text-lg font-semibold fade-in slide-up">Editing: {productToEdit.productName} <span className="text-sm text-muted-foreground">#{productToEdit.id}</span></h3>
           <div className="text-sm text-muted-foreground">SKU: {productToEdit.sku}</div>
           {productToEdit.imageUrl && (
             <img src={productToEdit.imageUrl} alt={productToEdit.productName} className="w-28 h-28 object-cover rounded mt-2 border" />

@@ -25,7 +25,7 @@ export default function OrdersPage() {
 
   return (
     <section className="py-16 container mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-6">My Orders 📦</h1>
+  <h1 className="text-3xl font-bold mb-6 fade-in slide-up">My Orders 📦</h1>
 
       {loading ? (
         <p>Loading orders...</p>

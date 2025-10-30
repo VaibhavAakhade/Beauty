@@ -72,7 +72,7 @@ export default function AdminDashboard() {
     <div className="container mx-auto py-10 px-4 min-h-screen">
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-4">
-        <h1 className="text-3xl font-bold text-primary">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-primary fade-in slide-up">Admin Dashboard</h1>
         {activeTab !== "HOME" && (
           <Button
             onClick={() => setActiveTab("HOME")}

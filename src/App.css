@@ -40,3 +40,29 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Small reusable animations used by pages (prefers-reduced-motion respected) */
+@keyframes bb-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes bb-slide-up {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+  animation: bb-fade-in 520ms ease both;
+}
+
+.slide-up {
+  animation: bb-slide-up 520ms cubic-bezier(.2,.9,.2,1) both;
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .fade-in, .slide-up {
+    animation: none !important;
+  }
+}
