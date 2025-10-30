@@ -13,6 +13,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import { CartProvider } from "./context/CartContext";
+import ProductDetail from "./components/product/ProductDetail";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -36,6 +38,7 @@ const App = () => (
           <Route path="*" element={<NotFound />} />
           <Route path="/cart" element={<CartPage />} />
         <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
         </Routes>
         </CartProvider>
         </AuthProvider>
