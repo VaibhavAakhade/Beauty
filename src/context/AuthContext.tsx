@@ -38,6 +38,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
+  // Auto logout when window/tab is closed
+  useEffect(() => {
+    const handleUnload = () => {
+      // perform same cleanup as logout — keep it sync-safe for unload
+      try {
+        // If you have a backend logout endpoint and want to notify it reliably,
+        // consider using navigator.sendBeacon(url, payload) here.
+      } catch (e) {
+        // ignore errors during unload
+      }
+      setUser(null);
+      setRole(null);
+      localStorage.removeItem('user');
+    };
+
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('unload', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleUnload);
+      window.removeEventListener('unload', handleUnload);
+    };
+  }, []);
+
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
