@@ -1,7 +1,7 @@
 // src/components/Navbar.tsx
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Menu, X, ShoppingBag, User, LogOut, Shield } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, ShoppingBag, User, LogOut, Shield, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Login from "./forms/login";
 import { useAuth } from "../context/AuthContext";
@@ -11,6 +11,16 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const location = useLocation();
+
+  const mainMenuItems = [
+    { label: "Home", path: "/", scroll: "home" },
+    { label: "Shop", path: "/", scroll: "products" },
+    { label: "About", path: "/about" },
+    { label: "Reviews", path: "/", scroll: "testimonials" },
+    { label: "Contact", path: "/contact" },
+    { label: "FAQ", path: "/faq", icon: HelpCircle }
+  ];
 
   const { cartItems = [], resetCart } = useCart(); // ✅ added resetCart
   const cartCount = cartItems.reduce((sum, it) => sum + it.quantity, 0);
@@ -119,36 +129,30 @@ const Navbar = () => {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-6">
-              <button
-                onClick={() => scrollToSection("home")}
-                className="text-foreground hover:text-primary font-medium"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => scrollToSection("products")}
-                className="text-foreground hover:text-primary font-medium"
-              >
-                Shop
-              </button>
-              <button
-                onClick={() => scrollToSection("about")}
-                className="text-foreground hover:text-primary font-medium"
-              >
-                About
-              </button>
-              <button
-                onClick={() => scrollToSection("testimonials")}
-                className="text-foreground hover:text-primary font-medium"
-              >
-                Reviews
-              </button>
-              <button
-                onClick={() => scrollToSection("contact")}
-                className="text-foreground hover:text-primary font-medium"
-              >
-                Contact
-              </button>
+              {mainMenuItems.map((item, index) => (
+                item.scroll && location.pathname === "/" ? (
+                  <button
+                    key={index}
+                    onClick={() => scrollToSection(item.scroll)}
+                    className="text-foreground hover:text-primary font-medium transition-colors duration-200 flex items-center gap-2"
+                  >
+                    {item.icon && <item.icon className="w-4 h-4" />}
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={index}
+                    to={item.path}
+                    className={`text-foreground hover:text-primary font-medium transition-colors duration-200 flex items-center gap-2 ${
+                      location.pathname === item.path ? "text-primary" : ""
+                    }`}
+                    onClick={() => item.scroll && scrollToSection(item.scroll)}
+                  >
+                    {item.icon && <item.icon className="w-4 h-4" />}
+                    {item.label}
+                  </Link>
+                )
+              ))}
 
               {/* Admin Link */}
               {isAdmin && (
@@ -186,36 +190,36 @@ const Navbar = () => {
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
             <div className="md:hidden py-4 space-y-4 bg-background/95 backdrop-blur-md rounded-b-2xl shadow-soft">
-              <button
-                onClick={() => scrollToSection("home")}
-                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-              >
-                Home
-              </button>
-              <button
-                onClick={() => scrollToSection("products")}
-                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-              >
-                Shop
-              </button>
-              <button
-                onClick={() => scrollToSection("about")}
-                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-              >
-                About
-              </button>
-              <button
-                onClick={() => scrollToSection("testimonials")}
-                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-              >
-                Reviews
-              </button>
-              <button
-                onClick={() => scrollToSection("contact")}
-                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
-              >
-                Contact
-              </button>
+              {mainMenuItems.map((item, index) => (
+                item.scroll && location.pathname === "/" ? (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      scrollToSection(item.scroll);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center gap-2"
+                  >
+                    {item.icon && <item.icon className="w-4 h-4" />}
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    key={index}
+                    to={item.path}
+                    className={`block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center gap-2 ${
+                      location.pathname === item.path ? "text-primary" : ""
+                    }`}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      item.scroll && scrollToSection(item.scroll);
+                    }}
+                  >
+                    {item.icon && <item.icon className="w-4 h-4" />}
+                    {item.label}
+                  </Link>
+                )
+              ))}
 
               {isAdmin && (
                 <Link

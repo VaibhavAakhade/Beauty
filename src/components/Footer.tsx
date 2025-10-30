@@ -1,4 +1,5 @@
-import { Instagram, Facebook, Youtube, Mail, Phone } from "lucide-react";
+import { Instagram, Facebook, Youtube, Mail, Phone, Linkedin } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -48,6 +49,14 @@ const Footer = () => {
               >
                 <Youtube className="w-5 h-5" />
               </a>
+              <a
+                href="https://linkedin.com/company/beautybloom-studio"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 rounded-full bg-background/10 hover:bg-primary transition-colors flex items-center justify-center"
+              >
+                <Linkedin className="w-5 h-5" />
+              </a>
             </div>
           </div>
 
@@ -83,24 +92,24 @@ const Footer = () => {
             <h3 className="font-display text-lg font-semibold mb-4">Company</h3>
             <ul className="space-y-2 text-background/70">
               <li>
-                <a href="#about" className="hover:text-primary transition-colors">
+                <Link to="/about" className="hover:text-primary transition-colors">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#testimonials" className="hover:text-primary transition-colors">
+                <Link to="/#testimonials" className="hover:text-primary transition-colors">
                   Reviews
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#contact" className="hover:text-primary transition-colors">
+                <Link to="/contact" className="hover:text-primary transition-colors">
                   Contact
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-primary transition-colors">
+                <Link to="/faq" className="hover:text-primary transition-colors">
                   FAQ
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -111,11 +120,11 @@ const Footer = () => {
             <ul className="space-y-3 text-background/70">
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4" />
-                <span>+1 (234) 567-8900</span>
+                <span>+91 7068187878</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4" />
-                <span>hello@luxebeauty.com</span>
+                <span>srjnupadhyay@gmail.com</span>
               </li>
             </ul>
           </div>
@@ -128,15 +137,15 @@ const Footer = () => {
               © {currentYear} Luxe Beauty. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm text-background/70">
-              <a href="#" className="hover:text-primary transition-colors">
+              <Link to="/privacy-policy" className="hover:text-primary transition-colors">
                 Privacy Policy
-              </a>
-              <a href="#" className="hover:text-primary transition-colors">
+              </Link>
+              <Link to="/terms-of-service" className="hover:text-primary transition-colors">
                 Terms of Service
-              </a>
-              <a href="#" className="hover:text-primary transition-colors">
+              </Link>
+              <Link to="/shipping-policy" className="hover:text-primary transition-colors">
                 Shipping Policy
-              </a>
+              </Link>
             </div>
           </div>
         </div>
