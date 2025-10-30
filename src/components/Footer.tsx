@@ -1,8 +1,5 @@
 import { Instagram, Facebook, Youtube, Mail, Phone, Linkedin } from "lucide-react";
-<<<<<<< HEAD
 import { Link } from "react-router-dom";
-=======
->>>>>>> 397d1967b483be470b411a62b50598c19b19f3b1
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
