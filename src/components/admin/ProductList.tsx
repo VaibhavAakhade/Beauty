@@ -6,7 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Edit, Trash2, Loader2, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-export default function ProductList() {
+type Props = {
+    onEdit?: (product: Product) => void;
+}
+
+export default function ProductList({ onEdit }: Props) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,10 +53,9 @@ export default function ProductList() {
     };
 
     const handleEdit = (product: Product) => {
-        // TODO: Implement navigation or modal opening for editing a product
+        if (onEdit) return onEdit(product);
+        // Fallback for older usage
         alert(`Editing product: ${product.productName} (ID: ${product.id})`);
-        // In a real app, you would navigate or open a dialog here:
-        // navigate(`/admin/product/edit/${product.id}`); 
     };
 
     useEffect(() => {
