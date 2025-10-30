@@ -7,18 +7,26 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Register from "./components/forms/register";
 import Login from "./components/forms/login";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
+import ResetPassword from "./pages/ResetPassword";
 import AdminRoute from "./components/AdminRoute";
 import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "@/context/AuthContext";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import { CartProvider } from "./context/CartContext";
+<<<<<<< HEAD
 import ContactUs from "./pages/ContactUs";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import FAQ from "./pages/FAQ";
+=======
+import ProductDetail from "./components/product/ProductDetail";
+
+>>>>>>> 397d1967b483be470b411a62b50598c19b19f3b1
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -32,6 +40,9 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/verify-otp" element={<VerifyOtp />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           {/* 🛡️ Protected Admin Route */}
           <Route 
             path="/admin" 
@@ -41,6 +52,7 @@ const App = () => (
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
           <Route path="/cart" element={<CartPage />} />
+<<<<<<< HEAD
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/about" element={<AboutUs />} />
@@ -48,6 +60,10 @@ const App = () => (
           <Route path="/shipping-policy" element={<ShippingPolicy />} />
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
+=======
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/product/:id" element={<ProductDetail />} />
+>>>>>>> 397d1967b483be470b411a62b50598c19b19f3b1
         </Routes>
         </CartProvider>
         </AuthProvider>
