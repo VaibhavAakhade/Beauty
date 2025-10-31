@@ -24,6 +24,7 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import FAQ from "./pages/FAQ";
 import ProductDetail from "./components/product/ProductDetail";
+import ScrollToTop from "./components/ScrollToTop";
 // --- End Combined Imports ---
 
 const queryClient = new QueryClient();
@@ -34,8 +35,9 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-      <AuthProvider>  
+      <AuthProvider>  
       <CartProvider>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/register" element={<Register />} />
