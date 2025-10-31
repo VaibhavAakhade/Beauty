@@ -17,7 +17,7 @@ const Navbar = () => {
     { label: "Home", path: "/", scroll: "home" },
     { label: "Shop", path: "/", scroll: "products" },
     { label: "About", path: "/about" },
-    { label: "Reviews", path: "/", scroll: "testimonials" },
+    { label: "Reviews", path: "/reviews" },
     { label: "Contact", path: "/contact" },
     { label: "FAQ", path: "/faq", icon: HelpCircle }
   ];
