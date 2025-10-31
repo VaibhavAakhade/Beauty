@@ -60,7 +60,7 @@ const FAQ = () => {
       <main className="flex-grow pt-20 bg-background/50 min-h-screen">
         <div className="container mx-auto px-4 py-16 animate-in slide-in-from-bottom duration-500">
           <div className="max-w-4xl mx-auto">
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-8 text-center">
+            <h1 className="font-display text-4xl md:text-5xl font-bold mb-8 text-center fade-in slide-up">
               Frequently Asked Questions
             </h1>
             <Card className="p-6">

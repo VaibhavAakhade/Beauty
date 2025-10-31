@@ -33,7 +33,7 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <form onSubmit={handleSendOtp} className="w-full max-w-md bg-card p-8 rounded-xl shadow">
-        <h2 className="text-2xl font-semibold mb-4">Forgot Password</h2>
+        <h2 className="text-2xl font-semibold mb-4 fade-in slide-up">Forgot Password</h2>
         <p className="text-sm text-muted-foreground mb-4">Enter your email and we'll send a one-time code to reset your password.</p>
         {error && <div className="mb-4 text-sm text-red-600">{error}</div>}
         <label className="block mb-2 text-sm">Email</label>

@@ -59,7 +59,7 @@ const AboutUs = () => {
       <section className="py-20 bg-gradient-to-b from-primary/5 to-background">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h1 className="font-display text-5xl md:text-6xl font-bold mb-6">
+            <h1 className="font-display text-5xl md:text-6xl font-bold mb-6 fade-in slide-up">
               About <span className="text-gradient">Luxe Beauty</span>
             </h1>
             <p className="text-xl text-muted-foreground leading-relaxed mb-8">
@@ -73,7 +73,7 @@ const AboutUs = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center mb-16">
-            <h2 className="font-display text-4xl font-bold mb-6">
+            <h2 className="font-display text-4xl font-bold mb-6 fade-in slide-up">
               Our Mission & Values
             </h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
