@@ -16,6 +16,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
 import { CartProvider } from "./context/CartContext";
+// --- Combined Imports ---
 import ContactUs from "./pages/ContactUs";
 import AboutUs from "./pages/AboutUs";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -23,6 +24,8 @@ import ShippingPolicy from "./pages/ShippingPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import FAQ from "./pages/FAQ";
 import ProductDetail from "./components/product/ProductDetail";
+// --- End Combined Imports ---
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -31,7 +34,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-      <AuthProvider>  
+      <AuthProvider>  
       <CartProvider>
         <Routes>
           <Route path="/" element={<Index />} />
@@ -45,10 +48,10 @@ const App = () => (
             element={<AdminRoute element={<AdminDashboard />} />} 
           />
           <Route path="/login" element={<Login/>} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          
+          {/* --- Combined Routes --- */}
           <Route path="/contact" element={<ContactUs />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -56,6 +59,10 @@ const App = () => (
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          {/* --- End Combined Routes --- */}
+
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         </CartProvider>
         </AuthProvider>
