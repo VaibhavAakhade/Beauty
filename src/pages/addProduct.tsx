@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { uploadProductImage } from "@/services/storageService"; // Upload helper to cloudnary Storage
 import { Product } from "@/types/product";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 type Props = {
   productToEdit?: Product | null;
@@ -18,6 +19,8 @@ export function AddProductForm({ productToEdit, onSaved }: Props) {
   const [isActive, setIsActive] = useState<boolean>(true);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Prefill when editing
   useEffect(() => {
@@ -176,12 +179,171 @@ export function AddProductForm({ productToEdit, onSaved }: Props) {
 
       <div>
         <label className="block text-sm font-medium mb-1">Product Image (choose to replace)</label>
-        <input type="file" accept="image/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
+        <input 
+          type="file" 
+          accept="image/*" 
+          onChange={(e) => {
+            const selectedFile = e.target.files?.[0] ?? null;
+            setFile(selectedFile);
+            
+            // Create preview URL for the selected image
+            if (selectedFile) {
+              const url = URL.createObjectURL(selectedFile);
+              setPreviewUrl(url);
+              setShowPreview(true);
+              return () => {
+                URL.revokeObjectURL(url); // Cleanup
+              };
+            }
+          }}
+          className="w-full px-4 py-2 border rounded bg-background" 
+        />
       </div>
 
       <button type="submit" disabled={isLoading} className="w-full py-2 bg-primary text-white rounded hover:bg-primary/90 transition">
         {isLoading ? "Processing..." : productToEdit ? "Update Product" : "Add Product"}
       </button>
+
+      {/* Preview Dialog */}
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="sm:max-w-[80vw]">
+          <DialogHeader>
+            <DialogTitle>Image Preview</DialogTitle>
+            <DialogDescription>
+              Review the selected image and product details
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            {/* Image Preview */}
+            <div className="aspect-square relative bg-muted rounded-lg overflow-hidden">
+              {previewUrl && (
+                <img 
+                  src={previewUrl} 
+                  alt="Product preview" 
+                  className="w-full h-full object-contain"
+                />
+              )}
+            </div>
+
+            {/* Product Details Form */}
+            <div className="space-y-4">
+              <h3 className="font-semibold">Product Details</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Product Name</label>
+                  <input 
+                    placeholder="Product Name" 
+                    value={name} 
+                    onChange={e => setName(e.target.value)} 
+                    className="w-full px-4 py-2 border rounded" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Price (₹)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Price" 
+                    value={price} 
+                    onChange={e => setPrice(Number(e.target.value))} 
+                    className="w-full px-4 py-2 border rounded" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Total Units</label>
+                  <input 
+                    type="number" 
+                    placeholder="Total Units" 
+                    value={totalUnits} 
+                    onChange={e => setTotalUnits(Number(e.target.value))} 
+                    className="w-full px-4 py-2 border rounded" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Category</label>
+                  <select 
+                    value={category} 
+                    onChange={e => setCategory(e.target.value)} 
+                    className="w-full px-4 py-2 border rounded"
+                  >
+                    <option value="HAIR_AND_CARE">HAIR_AND_CARE</option>
+                    <option value="SKINCARE">Skincare</option>
+                    <option value="BATH_AND_BODYCARE">BATH_AND_BODYCARE</option>
+                    <option value="MAKEUP">MAKEUP</option>
+                    <option value="BEAUTY">BEAUTY</option>
+                    <option value="TRAVEL_PACKS">TRAVEL_PACKS</option>
+                    <option value="HAND_CARE">HAND_CARE</option>
+                    <option value="EXCLUSIVES">EXCLUSIVES</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tag</label>
+                  <select 
+                    value={tag} 
+                    onChange={e => setTag(e.target.value)} 
+                    className="w-full px-4 py-2 border rounded"
+                  >
+                    <option value="NEW">New</option>
+                    <option value="HOT">Hot</option>
+                    <option value="BESTSELLER">Best Seller</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Rating (0-5)</label>
+                  <input 
+                    type="number" 
+                    placeholder="Rating (0-5)" 
+                    value={rating} 
+                    onChange={e => setRating(Number(e.target.value))} 
+                    min={0} 
+                    max={5} 
+                    className="w-full px-4 py-2 border rounded" 
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">Description</label>
+                  <textarea 
+                    placeholder="Description" 
+                    value={description} 
+                    onChange={e => setDescription(e.target.value)} 
+                    rows={4}
+                    className="w-full px-4 py-2 border rounded" 
+                  />
+                </div>
+
+                <label className="flex items-center space-x-2">
+                  <input 
+                    type="checkbox" 
+                    checked={isActive} 
+                    onChange={e => setIsActive(e.target.checked)} 
+                  />
+                  <span>Active</span>
+                </label>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSubmit(e);
+                      setShowPreview(false);
+                    }} 
+                    disabled={isLoading}
+                    className="w-full py-2 bg-primary text-white rounded hover:bg-primary/90 transition"
+                  >
+                    {isLoading ? "Processing..." : productToEdit ? "Update Product" : "Save Product"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

@@ -3,10 +3,11 @@ import { PlusCircle, List, UploadCloud, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button"; 
 import {AddProductForm } from "../pages/addProduct";
 import ProductList from "../components/admin/ProductList";       // separate file
+import ImagePreview from "../components/admin/ImagePreview";
 import { Product } from "@/types/product";
 // import BulkUpload from "./BulkUpload";         // separate file
 
-type ActiveTab = "HOME" | "ADD" | "LIST" | "BULK";
+type ActiveTab = "HOME" | "ADD" | "LIST" | "BULK" | "IMAGES";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("HOME");
@@ -23,6 +24,8 @@ export default function AdminDashboard() {
         );
       case "LIST":
         return <ProductList onEdit={(p) => { setEditingProduct(p); setActiveTab("ADD"); }} />;
+      case "IMAGES":
+        return <ImagePreview />;
     //   case "BULK":
     //     return <BulkUpload />;
       default:
@@ -61,6 +64,18 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-semibold mb-2">Bulk Upload</h2>
               <p className="text-sm text-gray-500">
                 Upload multiple products at once using CSV or Excel.
+              </p>
+            </div>
+
+            {/* BROWSE IMAGES */}
+            <div
+              onClick={() => setActiveTab("IMAGES")}
+              className="cursor-pointer bg-white rounded-xl shadow-md p-8 text-center border hover:shadow-lg transition-all hover:scale-[1.02]"
+            >
+              <UploadCloud className="w-10 h-10 text-primary mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Browse Images</h2>
+              <p className="text-sm text-gray-500">
+                Review uploaded product images and verify metadata.
               </p>
             </div>
           </div>
