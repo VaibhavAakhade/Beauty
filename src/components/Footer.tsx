@@ -84,6 +84,16 @@ const Footer = () => {
                   Best Sellers
                 </a>
               </li>
+              <li>
+                <Link to="/cart" className="hover:text-primary transition-colors">
+                  Shopping Cart
+                </Link>
+              </li>
+              <li>
+                <Link to="/rewards" className="hover:text-primary transition-colors">
+                  Earn Rewards
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -94,6 +104,16 @@ const Footer = () => {
               <li>
                 <Link to="/about" className="hover:text-primary transition-colors">
                   About Us
+                </Link>
+              </li>
+              <li>
+                <Link to="/blog" className="hover:text-primary transition-colors">
+                  Beauty Blog
+                </Link>
+              </li>
+              <li>
+                <Link to="/rewards" className="hover:text-primary transition-colors">
+                  Rewards Program
                 </Link>
               </li>
               <li>
