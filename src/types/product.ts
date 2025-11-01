@@ -12,6 +12,15 @@ export interface Product {
     rating: number | null;
     tag: string | null; // Assuming Tags enum maps to these
     listingTime: string; // ISO 8601 string for Instant
+  // Optional discount fields
+  regularDiscount?: {
+    type: 'percent' | 'amount';
+    value: number;
+  } | null;
+  festivalDiscount?: {
+    type: 'percent' | 'amount';
+    value: number;
+  } | null;
 }
   
   export interface CartItem extends Product {

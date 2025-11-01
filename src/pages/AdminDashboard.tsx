@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { PlusCircle, List, UploadCloud, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button"; 
 import {AddProductForm } from "../pages/addProduct";
@@ -9,6 +10,7 @@ import { Product } from "@/types/product";
 type ActiveTab = "HOME" | "ADD" | "LIST" | "BULK";
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<ActiveTab>("HOME");
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -73,15 +75,21 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="flex justify-between items-center border-b pb-4">
         <h1 className="text-3xl font-bold text-primary fade-in slide-up">Admin Dashboard</h1>
-        {activeTab !== "HOME" && (
-          <Button
-            onClick={() => setActiveTab("HOME")}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back
+        <div className="flex items-center gap-3">
+          {activeTab !== "HOME" && (
+            <Button
+              onClick={() => setActiveTab("HOME")}
+              variant="outline"
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back
+            </Button>
+          )}
+
+          <Button onClick={() => navigate('/')} variant="ghost" className="text-sm">
+            Return to Home
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Dynamic Content */}
