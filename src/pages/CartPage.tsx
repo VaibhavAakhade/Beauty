@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { X, Plus, Minus } from "lucide-react";
 import { updateCartItem, removeFromCart } from "@/api/cartApi";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 export default function CartPage() {
+  const navigate = useNavigate();
   const { cartItems, fetchCart } = useCart();
   const { user } = useAuth();
 
@@ -110,7 +112,10 @@ export default function CartPage() {
         >
           Continue Shopping
         </Button>
-        <Button className="bg-pink-600 text-white hover:bg-pink-700">
+        <Button 
+          className="bg-pink-600 text-white hover:bg-pink-700"
+          onClick={() => navigate("/checkout")}
+        >
           Proceed to Checkout
         </Button>
       </div>
