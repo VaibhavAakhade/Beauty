@@ -178,8 +178,9 @@ export function AddProductForm({ productToEdit, onSaved }: Props) {
       </label>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Product Image (choose to replace)</label>
+        <label htmlFor="product-image" className="block text-sm font-medium mb-1">Product Image (choose to replace)</label>
         <input 
+          id="product-image"
           type="file" 
           accept="image/*" 
           onChange={(e) => {

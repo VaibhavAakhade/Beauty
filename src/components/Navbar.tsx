@@ -1,11 +1,12 @@
 // src/components/Navbar.tsx
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Menu, X, ShoppingBag, User, LogOut, Shield, HelpCircle } from "lucide-react";
+import { Menu, X, User, LogOut, Shield, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Login from "./forms/login";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "@/context/CartContext";
+import { CartPreview } from "./cart/CartPreview";
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -20,6 +21,10 @@ const Navbar = () => {
     { label: "Reviews", path: "/reviews" },
     { label: "Contact", path: "/contact" },
     { label: "FAQ", path: "/faq", icon: HelpCircle }
+  ];
+
+  const authMenuItems = [
+    { label: "Orders", path: "/orders" }
   ];
 
   const { cartItems = [], resetCart } = useCart(); // ✅ added resetCart
@@ -164,15 +169,21 @@ const Navbar = () => {
                 </Link>
               )}
 
-              {/* Cart Button */}
-              <Link to="/cart" className="relative">
-                <ShoppingBag className="w-6 h-6 text-primary" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
+              {/* Auth Menu Items */}
+              {isAuthenticated && authMenuItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className={`text-foreground hover:text-primary font-medium transition-colors duration-200 flex items-center gap-2 ${
+                    location.pathname === item.path ? "text-primary" : ""
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {/* Cart Preview */}
+              <CartPreview />
 
               {/* User/Auth */}
               <AuthUserDisplay />
@@ -231,15 +242,25 @@ const Navbar = () => {
                 </Link>
               )}
 
-              {/* Cart Button */}
-              <Link to="/cart" className="relative block w-full text-center">
-                <ShoppingBag className="w-6 h-6 mx-auto" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-                <span className="text-sm mt-1 block">Cart</span>
+              {/* Auth Menu Items for Mobile */}
+              {isAuthenticated && authMenuItems.map((item, index) => (
+                <Link
+                  key={index}
+                  to={item.path}
+                  className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {/* Cart Link for Mobile */}
+              <Link
+                to="/cart"
+                className="block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Cart ({cartCount})
               </Link>
 
               <AuthUserDisplay isMobile={true} />

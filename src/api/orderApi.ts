@@ -1,7 +1,8 @@
 import axiosInstance from "./axiosConfig";
+import { CheckoutFormData } from "@/components/checkout/CheckoutForm";
 
-export const placeOrder = (userId: number) =>
-  axiosInstance.post(`/orders/place/${userId}`);
+export const placeOrder = (userId: number, shippingDetails: CheckoutFormData) =>
+  axiosInstance.post(`/orders/place/${userId}`, { shippingDetails });
 
 export const getOrders = (userId: number) =>
   axiosInstance.get(`/orders/user/${userId}`);
