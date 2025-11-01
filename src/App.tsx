@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "@/context/AuthContext";
 import CartPage from "./pages/CartPage";
 import OrdersPage from "./pages/OrdersPage";
+import CheckoutPage from "./pages/CheckoutPage";
 import { CartProvider } from "./context/CartContext";
 // --- Combined Imports ---
 import ContactUs from "./pages/ContactUs";
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/login" element={<Login/>} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
           
           {/* --- Combined Routes --- */}
           <Route path="/contact" element={<ContactUs />} />
