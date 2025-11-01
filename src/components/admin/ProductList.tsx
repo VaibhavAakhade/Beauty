@@ -14,17 +14,34 @@ export default function ProductList({ onEdit }: Props) {
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // filter states
+    const [nameFilter, setNameFilter] = useState("");
+    const [skuFilter, setSkuFilter] = useState("");
+    // price bucket filter and category
+    const [priceRange, setPriceRange] = useState<"all" | "0-499" | "500-999" | "1000-1999" | "2000-4999" | "5000+">("all");
+    const [categoryFilter, setCategoryFilter] = useState("");
+    // stock filter: show only items with stock > 5000 when true
+    const [stock5000Plus, setStock5000Plus] = useState(false);
+    // discount UI states
+    const [applyRegular, setApplyRegular] = useState(false);
+    const [regularType, setRegularType] = useState<'percent' | 'amount'>('percent');
+    const [regularValue, setRegularValue] = useState<string>('');
+    const [applyFestival, setApplyFestival] = useState(false);
+    const [festivalType, setFestivalType] = useState<'percent' | 'amount'>('percent');
+    const [festivalValue, setFestivalValue] = useState<string>('');
+    const [applying, setApplying] = useState(false);
+    const [applyToFiltered, setApplyToFiltered] = useState(true);
 
     const fetchProducts = async () => {
         setLoading(true);
         setError(null);
         try {
-            // Assumes the endpoint for fetching all products is /products
             const response = await axiosInstance.get("/products");
             setProducts(response.data);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Fetch products error:", err);
-            setError(err.message || "Failed to fetch products.");
+            const msg = err instanceof Error ? err.message : 'Failed to fetch products';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -44,9 +61,10 @@ export default function ProductList({ onEdit }: Props) {
             setProducts(products.filter(p => p.id !== id));
             alert(`Product ${id} deleted successfully!`);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Delete product error:", err);
-            setError(err.response?.data?.message || "Failed to delete product.");
+            const msg = err instanceof Error ? err.message : 'Failed to delete product';
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -79,6 +97,79 @@ export default function ProductList({ onEdit }: Props) {
         );
     }
 
+    const filtered = products.filter((p) => {
+        if (nameFilter && !p.productName.toLowerCase().includes(nameFilter.toLowerCase())) return false;
+        if (skuFilter && !p.sku?.toLowerCase().includes(skuFilter.toLowerCase())) return false;
+        if (categoryFilter && p.category?.toLowerCase() !== categoryFilter.toLowerCase()) return false;
+
+        // price buckets
+        if (priceRange !== 'all') {
+            const price = p.price || 0;
+            if (priceRange === '0-499' && !(price >= 0 && price <= 499)) return false;
+            if (priceRange === '500-999' && !(price >= 500 && price <= 999)) return false;
+            if (priceRange === '1000-1999' && !(price >= 1000 && price <= 1999)) return false;
+            if (priceRange === '2000-4999' && !(price >= 2000 && price <= 4999)) return false;
+            if (priceRange === '5000+' && !(price >= 5000)) return false;
+        }
+
+        // stock filter
+        if (stock5000Plus && !(p.totalUnits > 5000)) return false;
+
+        return true;
+    });
+
+    // derive unique categories from loaded products
+    const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+
+    const applyDiscounts = async () => {
+        if (!applyRegular && !applyFestival) {
+            alert('Select at least one discount type to apply.');
+            return;
+        }
+
+        // Determine target IDs
+        const targetIds = applyToFiltered ? filtered.map(p => p.id) : [];
+        if (targetIds.length === 0) {
+            alert('No products match the current filter to apply discounts.');
+            return;
+        }
+
+        const regPayload = applyRegular ? { type: regularType, value: Number(regularValue || 0) } : undefined;
+        const festPayload = applyFestival ? { type: festivalType, value: Number(festivalValue || 0) } : undefined;
+
+        // Optimistically update UI
+        setProducts((prev) => prev.map(p => targetIds.includes(p.id) ? ({
+            ...p,
+            regularDiscount: regPayload ? { ...regPayload } : p.regularDiscount ?? null,
+            festivalDiscount: festPayload ? { ...festPayload } : p.festivalDiscount ?? null,
+        }) : p));
+
+        // Try to persist to backend per-product; do best-effort and collect failures
+        setApplying(true);
+        try {
+            const failures: number[] = [];
+            await Promise.all(targetIds.map(async (id) => {
+                try {
+                    const body: Record<string, unknown> = {};
+                    if (regPayload) body.regularDiscount = regPayload;
+                    if (festPayload) body.festivalDiscount = festPayload;
+                    await axiosInstance.patch(`/products/${id}`, body);
+                } catch (err) {
+                    console.error('Failed to patch product', id, err);
+                    failures.push(id);
+                }
+            }));
+
+            if (failures.length) {
+                alert(`Discounts applied locally but failed to persist for IDs: ${failures.join(', ')}.`);
+            } else {
+                alert('Discounts applied successfully.');
+            }
+        } finally {
+            setApplying(false);
+        }
+    };
+
     return (
         <div className="mt-6">
             <h2 className="text-2xl font-semibold mb-4">Product Catalog ({products.length})</h2>
@@ -86,19 +177,55 @@ export default function ProductList({ onEdit }: Props) {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[100px]">ID</TableHead>
+                            <TableHead className="w-[80px]">Sr.</TableHead>
                             <TableHead>Name (SKU)</TableHead>
                             <TableHead>Category</TableHead>
                             <TableHead>Price</TableHead>
                             <TableHead className="text-center">Stock</TableHead>
                             <TableHead className="text-center">Status/Tag</TableHead>
+                            <TableHead>Regular Discount</TableHead>
+                            <TableHead>Festival Discount</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                        {/* Filters row: name/sku, category, price bucket, stock>5000 */}
+                        <TableRow>
+                            <TableCell />
+                            <TableCell>
+                                <input value={nameFilter} onChange={(e) => setNameFilter(e.target.value)} placeholder="Filter name" className="w-full rounded border px-2 py-1 text-sm" />
+                                <input value={skuFilter} onChange={(e) => setSkuFilter(e.target.value)} placeholder="Filter SKU" className="w-full mt-1 rounded border px-2 py-1 text-sm" />
+                            </TableCell>
+                            <TableCell>
+                                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="w-full rounded border px-2 py-1 text-sm">
+                                    <option value="">All categories</option>
+                                    {categories.map((c) => (<option key={c} value={c}>{c}</option>))}
+                                </select>
+                            </TableCell>
+                            <TableCell>
+                                <select value={priceRange} onChange={(e) => setPriceRange(e.target.value as "all" | "0-499" | "500-999" | "1000-1999" | "2000-4999" | "5000+")} className="w-full rounded border px-2 py-1 text-sm">
+                                    <option value="all">All prices</option>
+                                    <option value="0-499">0 - 499</option>
+                                    <option value="500-999">500 - 999</option>
+                                    <option value="1000-1999">1000 - 1999</option>
+                                    <option value="2000-4999">2000 - 4999</option>
+                                    <option value="5000+">5000 and above</option>
+                                </select>
+                            </TableCell>
+                            <TableCell className="text-center">
+                                <label className="flex items-center justify-center gap-2">
+                                    <input type="checkbox" checked={stock5000Plus} onChange={(e) => setStock5000Plus(e.target.checked)} />
+                                    <span className="text-sm">Stock &gt; 5000</span>
+                                </label>
+                            </TableCell>
+                            <TableCell />
+                            <TableCell />
+                            <TableCell />
+                            <TableCell />
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {products.map((product) => (
+                        {filtered.map((product, idx) => (
                             <TableRow key={product.id}>
-                                <TableCell className="font-medium">{product.id}</TableCell>
+                                <TableCell className="font-medium">{idx + 1}</TableCell>
                                 <TableCell>
                                     <div className="font-semibold">{product.productName}</div>
                                     <div className="text-sm text-muted-foreground">{product.sku}</div>
@@ -118,6 +245,22 @@ export default function ProductList({ onEdit }: Props) {
                                             {product.tag}
                                         </Badge>
                                     )}
+                                </TableCell>
+                                <TableCell>
+                                    {/* Regular discount display: expect product.regularDiscount = { type: 'percent'|'amount', value: number } */}
+                                    {product.regularDiscount ? (
+                                        <div className="text-sm">
+                                            {product.regularDiscount.type === 'percent' ? `${product.regularDiscount.value}%` : `₹${product.regularDiscount.value}`}
+                                        </div>
+                                    ) : <div className="text-sm text-muted-foreground">-</div>}
+                                </TableCell>
+                                <TableCell>
+                                    {/* Festival discount */}
+                                    {product.festivalDiscount ? (
+                                        <div className="text-sm">
+                                            {product.festivalDiscount.type === 'percent' ? `${product.festivalDiscount.value}%` : `₹${product.festivalDiscount.value}`}
+                                        </div>
+                                    ) : <div className="text-sm text-muted-foreground">-</div>}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <Button 
