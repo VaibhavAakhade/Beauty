@@ -17,6 +17,7 @@ const Navbar = () => {
   const mainMenuItems = [
     { label: "Home", path: "/", scroll: "home" },
     { label: "Shop", path: "/", scroll: "products" },
+    { label: "Blog", path: "/blog" },
     { label: "About", path: "/about" },
     { label: "Reviews", path: "/reviews" },
     { label: "Contact", path: "/contact" },

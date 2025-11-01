@@ -27,6 +27,9 @@ import TermsOfService from "./pages/TermsOfService";
 import FAQ from "./pages/FAQ";
 import ProductDetail from "./components/product/ProductDetail";
 import ScrollToTop from "./components/ScrollToTop";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
+import LoyaltyProgramPage from "./pages/LoyaltyProgramPage";
 // --- End Combined Imports ---
 
 const queryClient = new QueryClient();
@@ -66,6 +69,9 @@ const App = () => (
           <Route path="/terms-of-service" element={<TermsOfService />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/product/:id" element={<ProductDetail />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostPage />} />
+          <Route path="/rewards" element={<LoyaltyProgramPage />} />
           {/* --- End Combined Routes --- */}
 
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
