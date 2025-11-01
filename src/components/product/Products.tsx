@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext"; // ✅ import Cart context
+import { categoryDetails } from "@/data/CategoryDetails";
 import { Link } from "react-router-dom";
-
 
 interface Product {
   id: number;
@@ -22,7 +22,7 @@ interface Product {
 const categories = [
   "All",
   "HAIR_AND_CARE",
-  "SKINCARE" ,
+  "SKINCARE",
   "BATH_AND_BODYCARE",
   "MAKEUP",
   "BEAUTY",
@@ -72,7 +72,7 @@ const Products = () => {
   useEffect(() => {
     fetchProducts(selectedCategory);
   }, [selectedCategory]);
-  
+
   return (
     <section id="products" className="py-20 bg-gradient-subtle">
       <div className="container mx-auto px-4">
@@ -86,20 +86,58 @@ const Products = () => {
         </div>
 
         {/* Category Filter */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
+
+        <div className="flex flex-wrap justify-center gap-3 mb-12 relative">
           {categories.map((category) => (
-            <Button
+            <div
               key={category}
-              onClick={() => setSelectedCategory(category)}
-              variant={selectedCategory === category ? "default" : "outline"}
-              className={`rounded-full ${
-                selectedCategory === category
-                  ? "bg-primary text-primary-foreground shadow-glow"
-                  : "border-2 border-border hover:border-primary"
-              }`}
+              className="relative group"
+              onMouseEnter={() => setSelectedCategory(category)}
+              onMouseLeave={() => setSelectedCategory("All")}
             >
-              {category}
-            </Button>
+              <Button
+                variant={selectedCategory === category ? "default" : "outline"}
+                className={`rounded-full ${
+                  selectedCategory === category
+                    ? "bg-primary text-white shadow-md"
+                    : "border-2 border-gray-300 hover:border-primary"
+                }`}
+              >
+                {category}
+              </Button>
+
+              {/* Hover Menu */}
+              {categoryDetails[category] && selectedCategory === category && (
+                <div className="absolute left-0 top-full mt-2 w-72 bg-white shadow-lg rounded-lg p-4 z-50">
+                  <h4 className="font-semibold text-primary mb-2">
+                    Shop by Category
+                  </h4>
+                  <ul className="mb-3 space-y-1 text-sm">
+                    {categoryDetails[category].shopByCategory.map((item) => (
+                      <li
+                        key={item}
+                        className="hover:text-primary cursor-pointer"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                  <h4 className="font-semibold text-primary mb-2">
+                    Shop by Concern
+                  </h4>
+                  <ul className="space-y-1 text-sm">
+                    {categoryDetails[category].shopByConcern.map((item) => (
+                      <li
+                        key={item}
+                        className="hover:text-primary cursor-pointer"
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
@@ -110,30 +148,30 @@ const Products = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {products.map((product) => (
             <Card
-            key={product.id}
-            className="group overflow-hidden border-border hover:shadow-elegant transition-all duration-300 hover-lift"
-          >
-            <Link to={`/product/${product.id}`}>
-              <div className="relative overflow-hidden">
-                <img
-                  src={product.imageUrl}
-                  alt={product.productName}
-                  className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                {product.badge && (
-                  <Badge
-                    className={`absolute top-4 right-4 ${
-                      product.badge === "Bestseller"
-                        ? "bg-accent text-accent-foreground"
-                        : product.badge === "New"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-destructive text-destructive-foreground"
-                    }`}
-                  >
-                    {product.badge}
-                  </Badge>
-                )}
-              </div>
+              key={product.id}
+              className="group overflow-hidden border-border hover:shadow-elegant transition-all duration-300 hover-lift"
+            >
+              <Link to={`/product/${product.id}`}>
+                <div className="relative overflow-hidden">
+                  <img
+                    src={product.imageUrl}
+                    alt={product.productName}
+                    className="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {product.badge && (
+                    <Badge
+                      className={`absolute top-4 right-4 ${
+                        product.badge === "Bestseller"
+                          ? "bg-accent text-accent-foreground"
+                          : product.badge === "New"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-destructive text-destructive-foreground"
+                      }`}
+                    >
+                      {product.badge}
+                    </Badge>
+                  )}
+                </div>
               </Link>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-2">
@@ -155,7 +193,7 @@ const Products = () => {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="font-display text-2xl font-bold text-primary">
-                  ₹{product.price}
+                    ₹{product.price}
                   </span>
                   <Button
                     size="sm"
