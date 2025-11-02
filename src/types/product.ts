@@ -6,6 +6,7 @@ export interface Product {
     productName: string;
     description: string;
     price: number;
+    discountPrice: number;
     isActive: string; // Assuming Status enum maps to these strings
     imageUrl: string;
     category: string; // Assuming Categories enum maps to these

@@ -1,331 +1,993 @@
 import { useEffect, useState } from "react";
-import { Product } from "../../types/product";
-import axiosInstance from "../../api/axiosConfig";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Edit, Trash2, Loader2, XCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2 } from "lucide-react";
+import { Product } from "@/types/product";
 
-type Props = {
-  onEdit?: (product: Product) => void;
+// Local UI type extends Product to include discountedPrice
+type UIProduct = Product & {
+  discountedPrice?: number;
 };
 
-export default function ProductList({ onEdit }: Props) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface ProductListProps {
+  onEdit: (product: Product) => void;
+}
 
-  // filters
-  const [nameFilter, setNameFilter] = useState("");
-  const [skuFilter, setSkuFilter] = useState("");
-  const [priceRange, setPriceRange] = useState<
-    "all" | "0-499" | "500-999" | "1000-1999" | "2000-4999" | "5000+"
-  >("all");
-  const [categoryFilter, setCategoryFilter] = useState("");
-  const [stock5000Plus, setStock5000Plus] = useState(false);
+export default function ProductList({ onEdit }: ProductListProps) {
+  const [products, setProducts] = useState<UIProduct[]>([]);
+  const [filtered, setFiltered] = useState<UIProduct[]>([]);
+  const [includeRegular, setIncludeRegular] = useState(true);
+  const [includeFestival, setIncludeFestival] = useState(true);
 
-  // discount states
-  const [applyRegular, setApplyRegular] = useState(false);
-  const [applyFestival, setApplyFestival] = useState(false);
-  const [regularType, setRegularType] = useState<"percent" | "amount">("percent");
-  const [regularValue, setRegularValue] = useState<string>("");
-  const [festivalType, setFestivalType] = useState<"percent" | "amount">("percent");
-  const [festivalValue, setFestivalValue] = useState<string>("");
-  const [applying, setApplying] = useState(false);
+  // Filters
+  const [searchName, setSearchName] = useState("");
+  const [searchSKU, setSearchSKU] = useState("");
+  const [category, setCategory] = useState("");
+  const [priceRange, setPriceRange] = useState("");
+  const [stockCondition, setStockCondition] = useState("");
+  const [stockValue, setStockValue] = useState("");
+  const [tag, setTag] = useState("");
 
-  const fetchProducts = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axiosInstance.get("/products");
-      setProducts(response.data);
-    } catch (err: unknown) {
-      console.error("Fetch products error:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch products");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 🧾 Regular Discount States
+const [discountMode, setDiscountMode] = useState<"none" | "all" | "custom" | "category" | "tag">("none");
+const [discountType, setDiscountType] = useState<"%" | "₹">("%");
+const [discountValue, setDiscountValue] = useState("");
+const [selectedCategory, setSelectedCategory] = useState("");
+const [selectedTag, setSelectedTag] = useState("");
+const [customChecked, setCustomChecked] = useState<{ [id: number]: boolean }>({});
+const [activeDiscount, setActiveDiscount] = useState(false);
+// 🟢 Track applied regular discounts (renamed from appliedDiscounts)
+const [regularAppliedDiscounts, setRegularAppliedDiscounts] = useState<{
+  all: boolean;
+  categories: Record<string, boolean>;
+  tags: Record<string, boolean>;
+}>({
+  all: false,
+  categories: {},
+  tags: {},
+});
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm(`Delete product ID ${id}?`)) return;
-    try {
-      setLoading(true);
-      await axiosInstance.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      alert("Deleted successfully!");
-    } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : "Delete failed");
-    } finally {
-      setLoading(false);
-    }
-  };
+// 🟢 Track global active discount details
+const [activeRegularDetails, setActiveRegularDetails] = useState<{
+  value: string;
+  type: string;
+  mode: string;
+}>({
+  value: "",
+  type: "%",
+  mode: "",
+});
 
-  const handleEdit = (product: Product) => {
-    if (onEdit) onEdit(product);
-  };
+
+
+// 🟢 Store actual category-wise discount details
+const [categoryDiscountDetails, setCategoryDiscountDetails] = useState<
+  Record<string, { value: string; type: string }>
+>({});
+
+// 🟢 Store actual tag-wise discount details
+const [tagDiscountDetails, setTagDiscountDetails] = useState<
+  Record<string, { value: string; type: string }>
+>({});
+
+  
+
+    // 🎉 Festival Discount States
+  const [festivalDiscountMode, setFestivalDiscountMode] = useState("none"); // all | custom | category | tag | none
+  const [festivalDiscountValue, setFestivalDiscountValue] = useState<string>("");
+  const [festivalDiscountType, setFestivalDiscountType] = useState<string>("%");
+  const [festivalSelectedCategory, setFestivalSelectedCategory] = useState("");
+  const [festivalSelectedTag, setFestivalSelectedTag] = useState("");
+  const [festivalActiveDiscount, setFestivalActiveDiscount] = useState(false);
+  const [festivalRowValues, setFestivalRowValues] = useState<{ [key: number]: string }>({});
+  const [festivalRowTypes, setFestivalRowTypes] = useState<{ [key: number]: string }>({});
+  const [festivalRowActive, setFestivalRowActive] = useState<{ [key: number]: boolean }>({});
+  const [festivalFromDate, setFestivalFromDate] = useState("");
+  const [festivalToDate, setFestivalToDate] = useState("");
+  
+  // Track applied discounts by category/tag
+  const [appliedDiscounts, setAppliedDiscounts] = useState<{
+    categories: Record<string, boolean>;
+    tags: Record<string, boolean>;
+  }>({ categories: {}, tags: {} });
+
+  // Row-wise custom discount input
+  const [rowDiscountValues, setRowDiscountValues] = useState<{ [key: number]: string }>({});
+  const [rowDiscountTypes, setRowDiscountTypes] = useState<{ [key: number]: string }>({});
+  const [rowActiveDiscounts, setRowActiveDiscounts] = useState<{ [key: number]: boolean }>({});
 
   useEffect(() => {
-    fetchProducts();
+    fetch("http://localhost:8085/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        const normalized: UIProduct[] = data.map((p: any) => ({
+          id: p.id,
+          product_name: p.product_name, // keep original fields if Product expects them
+          productName: p.product_name || p.name || p.productName,
+          name: p.name,
+          sku: p.sku,
+          category: p.category,
+          price: Number(p.price),
+          stock: p.total_units || p.totalUnits || p.stock || p.stock_quantity,
+          total_units: p.total_units,
+          totalUnits: p.totalUnits,
+          tag: p.tag || p.product_tag || "",
+          // discountedPrice undefined by default
+        })) as UIProduct[];
+        setProducts(normalized);
+        setFiltered(normalized);
+      })
+      .catch((err) => console.error("Error fetching products:", err));
   }, []);
 
-  const filtered = products.filter((p) => {
-    if (nameFilter && !p.productName.toLowerCase().includes(nameFilter.toLowerCase())) return false;
-    if (skuFilter && !p.sku?.toLowerCase().includes(skuFilter.toLowerCase())) return false;
-    if (categoryFilter && p.category?.toLowerCase() !== categoryFilter.toLowerCase()) return false;
-
-    const price = p.price || 0;
-    if (priceRange !== "all") {
-      if (priceRange === "0-499" && !(price >= 0 && price <= 499)) return false;
-      if (priceRange === "500-999" && !(price >= 500 && price <= 999)) return false;
-      if (priceRange === "1000-1999" && !(price >= 1000 && price <= 1999)) return false;
-      if (priceRange === "2000-4999" && !(price >= 2000 && price <= 4999)) return false;
-      if (priceRange === "5000+" && !(price >= 5000)) return false;
-    }
-
-    if (stock5000Plus && !(p.totalUnits > 5000)) return false;
-    return true;
-  });
-
-  const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
-
-  const applyDiscounts = async () => {
-    if (!applyRegular && !applyFestival) {
-      alert("Please tick at least one discount checkbox.");
-      return;
-    }
-    const ids = filtered.map((p) => p.id);
-    if (!ids.length) {
-      alert("No filtered products found.");
-      return;
-    }
-
-    const regPayload = applyRegular
-      ? { type: regularType, value: Number(regularValue || 0) }
-      : undefined;
-    const festPayload = applyFestival
-      ? { type: festivalType, value: Number(festivalValue || 0) }
-      : undefined;
-
-    // update UI
-    setProducts((prev) =>
-      prev.map((p) =>
-        ids.includes(p.id)
-          ? {
-              ...p,
-              regularDiscount: regPayload ? regPayload : p.regularDiscount,
-              festivalDiscount: festPayload ? festPayload : p.festivalDiscount,
-            }
-          : p
-      )
-    );
-
-    setApplying(true);
-    try {
-      await Promise.all(
-        ids.map(async (id) => {
-          const body: Record<string, unknown> = {};
-          if (regPayload) body.regularDiscount = regPayload;
-          if (festPayload) body.festivalDiscount = festPayload;
-          await axiosInstance.patch(`/products/${id}`, body);
-        })
+  // Apply filters
+  useEffect(() => {
+    let result = [...products];
+    if (searchName)
+      result = result.filter((p) =>
+        String(p.productName ||"").toLowerCase().includes(searchName.toLowerCase())
       );
-      alert("Discounts applied successfully!");
-    } catch (err) {
-      console.error("Discount apply failed:", err);
-      alert("Some updates failed.");
-    } finally {
-      setApplying(false);
+    if (searchSKU)
+      result = result.filter((p) =>
+        String(p.sku || "").toLowerCase().includes(searchSKU.toLowerCase())
+      );
+    if (category) result = result.filter((p) => p.category === category);
+    if (tag) result = result.filter((p) => p.tag === tag);
+
+    if (priceRange) {
+      result = result.filter((p) => {
+        const price = Number(p.price || 0);
+        switch (priceRange) {
+          case "0-499":
+            return price <= 499;
+          case "500-999":
+            return price >= 500 && price <= 999;
+          case "1000-1999":
+            return price >= 1000 && price <= 1999;
+          case "2000-4999":
+            return price >= 2000 && price <= 4999;
+          case "5000+":
+            return price >= 5000;
+          default:
+            return true;
+        }
+      });
+    }
+
+    if (stockCondition && stockValue) {
+      const value = Number(stockValue);
+      result = result.filter((p) => {
+        const stock = Number(p.totalUnits || 0);
+        switch (stockCondition) {
+          case "<":
+            return stock < value;
+          case ">":
+            return stock > value;
+          case "=":
+            return stock === value;
+          default:
+            return true;
+        }
+      });
+    }
+
+    setFiltered(result);
+  }, [searchName, searchSKU, category, tag, priceRange, stockCondition, stockValue, products]);
+
+  const handleDelete = (id: number) => {
+    if (confirm("Are you sure you want to delete this product?")) {
+      fetch(`http://localhost:8085/api/products/${id}`, { method: "DELETE" })
+        .then(() => setProducts(products.filter((p) => p.id !== id)));
     }
   };
 
-  if (loading && !products.length)
-    return (
-      <div className="flex justify-center items-center h-40">
-        <Loader2 className="animate-spin mr-2" /> Loading...
-      </div>
-    );
+  const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
+  const tags = [...new Set(products.map((p) => p.tag).filter(Boolean))];
 
-  if (error)
-    return (
-      <div className="p-4 bg-red-100 text-red-700 border border-red-400 rounded flex items-center gap-2">
-        <XCircle className="w-5 h-5" /> {error}
-      </div>
+  // 🧮 Apply discount (global/category/tag)
+const applyDiscount = () => {
+  if (!discountValue) return alert("Please enter discount value");
+  const val = Number(discountValue);
+
+  const updated = filtered.map((p) => {
+    let eligible = false;
+    if (discountMode === "all") eligible = true;
+    else if (discountMode === "category" && p.category === selectedCategory)
+      eligible = true;
+    else if (discountMode === "tag" && p.tag === selectedTag)
+      eligible = true;
+
+    if (eligible) {
+      const discountAmount =
+        discountType === "%" ? (Number(p.price || 0) * val) / 100 : val;
+      const finalPrice = Math.max(0, Number(p.price || 0) - discountAmount);
+      return { ...p, discountedPrice: finalPrice };
+    }
+    return p;
+  });
+
+  setFiltered(updated);
+  setActiveDiscount(true);
+
+  // 🧩 Update discount detail storage
+  if (discountMode === "category" && selectedCategory) {
+    setAppliedDiscounts((prev) => ({
+      ...prev,
+      categories: { ...prev.categories, [selectedCategory]: true },
+    }));
+    setCategoryDiscountDetails((prev) => ({
+      ...prev,
+      [selectedCategory]: { value: discountValue, type: discountType },
+    }));
+  } else if (discountMode === "tag" && selectedTag) {
+    setAppliedDiscounts((prev) => ({
+      ...prev,
+      tags: { ...prev.tags, [selectedTag]: true },
+    }));
+    setTagDiscountDetails((prev) => ({
+      ...prev,
+      [selectedTag]: { value: discountValue, type: discountType },
+    }));
+  } else if (discountMode === "all") {
+    setAppliedDiscounts((prev) => ({ ...prev, all: true }));
+    setActiveRegularDetails({
+      value: discountValue,
+      type: discountType,
+      mode: "all",
+    });
+  }
+};
+
+const removeDiscount = () => {
+  if (discountMode === "all") {
+    // 🟢 Remove discount from all products
+    const reset = filtered.map((p) => {
+      const { discountedPrice, ...rest } = p;
+      return rest as UIProduct;
+    });
+    setFiltered(reset);
+
+    // 🧩 Update discount state
+    setAppliedDiscounts({ categories: {}, tags: {}, all: false });
+    setRegularAppliedDiscounts({ all: false, categories: {}, tags: {} });
+    setActiveRegularDetails({ value: "", type: "%", mode: "" });
+
+    setActiveDiscount(false);
+    setDiscountValue("");
+  }
+
+  else if (discountMode === "category" && selectedCategory) {
+    // 🟠 Remove only products in this category
+    const reset = filtered.map((p) => {
+      if (p.category === selectedCategory) {
+        const { discountedPrice, ...rest } = p;
+        return rest as UIProduct;
+      }
+      return p;
+    });
+    setFiltered(reset);
+
+    // 🧩 Update UI button state
+    setAppliedDiscounts((prev) => ({
+      ...prev,
+      categories: { ...prev.categories, [selectedCategory]: false },
+    }));
+    setRegularAppliedDiscounts((prev) => ({
+      ...prev,
+      categories: { ...prev.categories, [selectedCategory]: false },
+    }));
+
+    setCategoryDiscountDetails((prev) => {
+      const clone = { ...prev };
+      delete clone[selectedCategory];
+      return clone;
+    });
+
+    setDiscountValue("");
+  }
+
+  else if (discountMode === "tag" && selectedTag) {
+    // 🟣 Remove only products with this tag
+    const reset = filtered.map((p) => {
+      if (p.tag === selectedTag) {
+        const { discountedPrice, ...rest } = p;
+        return rest as UIProduct;
+      }
+      return p;
+    });
+    setFiltered(reset);
+
+    // 🧩 Update UI button state
+    setAppliedDiscounts((prev) => ({
+      ...prev,
+      tags: { ...prev.tags, [selectedTag]: false },
+    }));
+    setRegularAppliedDiscounts((prev) => ({
+      ...prev,
+      tags: { ...prev.tags, [selectedTag]: false },
+    }));
+
+    setTagDiscountDetails((prev) => {
+      const clone = { ...prev };
+      delete clone[selectedTag];
+      return clone;
+    });
+
+    setDiscountValue("");
+  }
+};
+
+
+  // 🧩 Row-wise discount apply
+  const applyRowDiscount = (p: UIProduct) => {
+    const val = Number(rowDiscountValues[p.id] || 0);
+    const type = rowDiscountTypes[p.id] || "%";
+    if (!val) return alert("Enter discount value first");
+
+    const discountAmount = type === "%" ? (Number(p.price || 0) * val) / 100 : val;
+    const finalPrice = Math.max(0, Number(p.price || 0) - discountAmount);
+
+    const updated = filtered.map((item) =>
+      item.id === p.id ? { ...item, discountedPrice: finalPrice } : item
     );
+    setFiltered(updated);
+    setRowActiveDiscounts({ ...rowActiveDiscounts, [p.id]: true });
+  };
+
+  const removeRowDiscount = (p: UIProduct) => {
+    const updated = filtered.map((item) => {
+      if (item.id === p.id) {
+        const { discountedPrice, ...rest } = item;
+        return rest as UIProduct;
+      }
+      return item;
+    });
+    setFiltered(updated);
+    setRowActiveDiscounts({ ...rowActiveDiscounts, [p.id]: false });
+  };
+  // 🎉 Apply Festival Discount
+const applyFestivalDiscount = () => {
+  if (!festivalDiscountValue) return alert("Please enter discount value");
+
+  const val = Number(festivalDiscountValue);
+  const updated = filtered.map((p) => {
+    let eligible = false;
+    if (festivalDiscountMode === "all") eligible = true;
+    else if (festivalDiscountMode === "category" && p.category === festivalSelectedCategory)
+      eligible = true;
+    else if (festivalDiscountMode === "tag" && p.tag === festivalSelectedTag)
+      eligible = true;
+
+    if (eligible) {
+      const discounted =
+        festivalDiscountType === "%"
+          ? p.price - (p.price * val) / 100
+          : p.price - val;
+      return { ...p, festivalPrice: Math.max(0, discounted) };
+    }
+    return p;
+  });
+
+  setFiltered(updated);
+  setFestivalActiveDiscount(true);
+};
+
+// ❌ Remove Festival Discount
+const removeFestivalDiscount = () => {
+  const reset = filtered.map((p) => {
+    const { festivaldiscountPrice, ...rest } = p;
+    return rest as UIProduct;
+  });
+  setFiltered(reset);
+  setFestivalActiveDiscount(false);
+  setFestivalDiscountValue("");
+};
+
+// 🎯 Row-wise Festival Discount
+const applyFestivalRowDiscount = (p: UIProduct) => {
+  const val = Number(festivalRowValues[p.id] || 0);
+  const type = festivalRowTypes[p.id] || "%";
+  if (!val) return alert("Enter festival discount value");
+
+  const discounted = type === "%" ? p.price - (p.price * val) / 100 : p.price - val;
+  const updated = filtered.map((item) =>
+    item.id === p.id ? { ...item, festivalPrice: Math.max(0, discounted) } : item
+  );
+  setFiltered(updated);
+  setFestivalRowActive({ ...festivalRowActive, [p.id]: true });
+};
+
+const removeFestivalRowDiscount = (p: UIProduct) => {
+  const updated = filtered.map((item) => {
+    if (item.id === p.id) {
+      const { festivaldiscountPrice, ...rest } = item;
+      return rest as UIProduct;
+    }
+    return item;
+  });
+  setFiltered(updated);
+  setFestivalRowActive({ ...festivalRowActive, [p.id]: false });
+};
+
+  // Helper to know if currently selected category/tag already has discount
+  const currentApplied =
+    (discountMode === "category" && selectedCategory && appliedDiscounts.categories[selectedCategory]) ||
+    (discountMode === "tag" && selectedTag && appliedDiscounts.tags[selectedTag]);
+
+  const handleToggleFestivalDiscountRow = (id: number) => {
+  const isActive = festivalRowActive[id];
+  if (isActive) {
+    // 🟥 Remove discount
+    setFestivalRowActive((prev) => ({ ...prev, [id]: false }));
+    setProducts((prev) =>
+      prev.map((prod) =>
+        prod.id === id
+          ? { ...prod, festivaldiscountPrice: undefined }
+          : prod
+      )
+    );
+  } else {
+    const value = parseFloat(festivalRowValues[id] || "0");
+    const type = festivalRowTypes[id] || "%";
+
+    if (!value || value <= 0) {
+      alert("⚠️ Please enter a valid discount value before applying.");
+      return;
+    }
+
+    // 🟢 Apply discount
+    setFestivalRowActive((prev) => ({ ...prev, [id]: true }));
+    setProducts((prev) =>
+      prev.map((prod) => {
+        if (prod.id === id) {
+          const basePrice = Number(prod.price);
+          const newPrice =
+            type === "%"
+              ? basePrice - (basePrice * value) / 100
+              : basePrice - value;
+
+          return {
+            ...prod,
+            festivaldiscountPrice: newPrice > 0 ? newPrice : 0,
+          };
+        }
+        return prod;
+      })
+    );
+  }
+};
+
 
   return (
-    <div className="mt-6">
-      <h2 className="text-2xl font-semibold mb-4">Product Catalog ({products.length})</h2>
+    <div className="mt-4">
+      <div className="overflow-x-auto bg-white shadow rounded-lg">
+        <table className="min-w-full border-collapse">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="p-3 text-left border">Sr No</th>
 
-      {/* === Discount Controls === */}
-      <div className="flex flex-wrap gap-4 mb-4 border p-4 rounded-md bg-gray-50">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={applyRegular}
-            onChange={(e) => setApplyRegular(e.target.checked)}
-          />
-          <span className="font-medium">Apply Regular Discount</span>
-        </label>
-        {applyRegular && (
-          <>
-            <select
-              value={regularType}
-              onChange={(e) => setRegularType(e.target.value as "percent" | "amount")}
-              className="border rounded px-2 py-1"
-            >
-              <option value="percent">%</option>
-              <option value="amount">₹</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Value"
-              value={regularValue}
-              onChange={(e) => setRegularValue(e.target.value)}
-              className="border rounded px-2 py-1 w-20"
-            />
-          </>
-        )}
+              <th className="p-3 text-left border">
+                Name
+                <input
+                  type="text"
+                  placeholder="Filter"
+                  value={searchName}
+                  onChange={(e) => setSearchName(e.target.value)}
+                  className="mt-1 w-full border rounded p-1 text-sm"
+                />
+              </th>
 
-        <label className="flex items-center gap-2 ml-6">
-          <input
-            type="checkbox"
-            checked={applyFestival}
-            onChange={(e) => setApplyFestival(e.target.checked)}
-          />
-          <span className="font-medium">Apply Festival Discount</span>
-        </label>
-        {applyFestival && (
-          <>
-            <select
-              value={festivalType}
-              onChange={(e) => setFestivalType(e.target.value as "percent" | "amount")}
-              className="border rounded px-2 py-1"
-            >
-              <option value="percent">%</option>
-              <option value="amount">₹</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Value"
-              value={festivalValue}
-              onChange={(e) => setFestivalValue(e.target.value)}
-              className="border rounded px-2 py-1 w-20"
-            />
-          </>
-        )}
+              <th className="p-3 text-left border">
+                SKU
+                <input
+                  type="text"
+                  placeholder="Filter"
+                  value={searchSKU}
+                  onChange={(e) => setSearchSKU(e.target.value)}
+                  className="mt-1 w-full border rounded p-1 text-sm"
+                />
+              </th>
 
-        <Button onClick={applyDiscounts} disabled={applying} className="ml-auto">
-          {applying ? "Applying..." : "Apply Discounts"}
-        </Button>
-      </div>
+              <th className="p-3 text-left border">
+                Category
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="mt-1 w-full border rounded p-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {categories.map((c, i) => (
+                    <option key={i} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </th>
 
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Sr.</TableHead>
-              <TableHead>Name (SKU)</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead>Final Price</TableHead>
-              <TableHead>Regular Discount</TableHead>
-              <TableHead>Festival Discount</TableHead>
-              <TableHead className="text-center">Stock</TableHead>
-              <TableHead className="text-center">Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+              <th className="p-3 text-left border">
+                Tag
+                <select
+                  value={tag}
+                  onChange={(e) => setTag(e.target.value)}
+                  className="mt-1 w-full border rounded p-1 text-sm"
+                >
+                  <option value="">All</option>
+                  {tags.map((t, i) => (
+                    <option key={i} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </th>
 
-          <TableBody>
-            {filtered.map((p, idx) => {
-              let final = p.price;
-              if (p.regularDiscount) {
-                if (p.regularDiscount.type === "percent")
-                  final -= (final * p.regularDiscount.value) / 100;
-                else final -= p.regularDiscount.value;
-              }
-              if (p.festivalDiscount) {
-                if (p.festivalDiscount.type === "percent")
-                  final -= (final * p.festivalDiscount.value) / 100;
-                else final -= p.festivalDiscount.value;
-              }
-              if (final < 0) final = 0;
+              <th className="p-3 text-left border">
+                Stock
+                <div className="flex mt-1 gap-1">
+                  <select
+                    value={stockCondition}
+                    onChange={(e) => setStockCondition(e.target.value)}
+                    className="border rounded p-1 text-sm w-1/2"
+                  >
+                    <option value="">All</option>
+                    <option value="<">{"<"}</option>
+                    <option value=">">{">"}</option>
+                    <option value="=">=</option>
+                  </select>
+                  <input
+                    type="number"
+                    placeholder="Value"
+                    value={stockValue}
+                    onChange={(e) => setStockValue(e.target.value)}
+                    className="border rounded p-1 text-sm w-1/2"
+                  />
+                </div>
+              </th>
 
-              return (
-                <TableRow key={p.id}>
-                  <TableCell>{idx + 1}</TableCell>
-                  <TableCell>
-                    <div className="font-semibold">{p.productName}</div>
-                    <div className="text-sm text-muted-foreground">{p.sku}</div>
-                  </TableCell>
-                  <TableCell>{p.category}</TableCell>
-                  <TableCell>₹{p.price.toFixed(2)}</TableCell>
-                  <TableCell>
-                    <div className="font-semibold text-green-600">₹{final.toFixed(2)}</div>
-                  </TableCell>
-                  <TableCell>
-                    {p.regularDiscount ? (
-                      <span>
-                        {p.regularDiscount.type === "percent"
-                          ? `${p.regularDiscount.value}%`
-                          : `₹${p.regularDiscount.value}`}
-                      </span>
+              <th className="p-3 text-left border">
+                Price
+                <select
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(e.target.value)}
+                  className="mt-1 w-full border rounded p-1 text-sm"
+                >
+                  <option value="">All</option>
+                  <option value="0-499">₹0 - ₹499</option>
+                  <option value="500-999">₹500 - ₹999</option>
+                  <option value="1000-1999">₹1000 - ₹1999</option>
+                  <option value="2000-4999">₹2000 - ₹4999</option>
+                  <option value="5000+">₹5000+</option>
+                </select>
+              </th>
+
+              {/* Discount Header */}
+              <th className="p-3 text-left border">
+                Regular Discount
+                <div className="mt-1 space-y-1">
+                  <select
+                    value={discountMode}
+                    onChange={(e) => setDiscountMode(e.target.value)}
+                    className="border rounded p-1 w-full text-sm"
+                  >
+                    <option value="none">None</option>
+                    <option value="all">All</option>
+                    <option value="custom">Custom</option>
+                    <option value="category">By Category</option>
+                    <option value="tag">By Tag</option>
+                  </select>
+
+                  {(discountMode === "category" || discountMode === "tag") && (
+                    <select
+                      value={
+                        discountMode === "category"
+                          ? selectedCategory
+                          : selectedTag
+                      }
+                      onChange={(e) =>
+                        discountMode === "category"
+                          ? setSelectedCategory(e.target.value)
+                          : setSelectedTag(e.target.value)
+                      }
+                      className="border rounded p-1 w-full text-sm"
+                    >
+                      <option value="">Select</option>
+                      {(discountMode === "category" ? categories : tags).map(
+                        (v, i) => (
+                          <option key={i} value={v}>
+                            {v}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  )}
+
+                  {discountMode !== "custom" && (
+                    <>
+                      <div className="flex gap-1">
+                        <input
+                          type="number"
+                          placeholder="Value"
+                          value={discountValue}
+                          onChange={(e) => setDiscountValue(e.target.value)}
+                          className="border rounded p-1 w-2/3 text-sm"
+                        />
+                        <select
+                          value={discountType}
+                          onChange={(e) => setDiscountType(e.target.value)}
+                          className="border rounded p-1 w-1/3 text-sm"
+                        >
+                          <option value="%">%</option>
+                          <option value="₹">₹</option>
+                        </select>
+                      </div>
+
+                      {(() => {
+                        let alreadyApplied = false;
+                        let appliedInfo: { value: string; type: string } | undefined;
+
+                        if (discountMode === "all" && appliedDiscounts.all) {
+                          alreadyApplied = true;
+                          appliedInfo = activeRegularDetails;
+                        } else if (
+                          discountMode === "category" &&
+                          selectedCategory &&
+                          appliedDiscounts.categories[selectedCategory]
+                        ) {
+                          alreadyApplied = true;
+                          appliedInfo = categoryDiscountDetails[selectedCategory];
+                        } else if (
+                          discountMode === "tag" &&
+                          selectedTag &&
+                          appliedDiscounts.tags[selectedTag]
+                        ) {
+                          alreadyApplied = true;
+                          appliedInfo = tagDiscountDetails[selectedTag];
+                        }
+
+                        return (
+                          <div className="flex flex-col items-center">
+                            {alreadyApplied ? (
+                              <>
+                                <Button
+                                  onClick={removeDiscount}
+                                  variant="destructive"
+                                  className="w-full bg-red-600 hover:bg-red-700"
+                                  size="sm"
+                                >
+                                  Remove Discount
+                                </Button>
+                                {appliedInfo && (
+                                  <div className="text-xs text-gray-600 mt-1 text-center">
+                                    🟢 Discount Applied:&nbsp;
+                                    {appliedInfo.value}
+                                    {appliedInfo.type}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <Button
+                                onClick={applyDiscount}
+                                className="w-full bg-green-600 hover:bg-green-700"
+                                size="sm"
+                                disabled={
+                                  (discountMode === "category" && !selectedCategory) ||
+                                  (discountMode === "tag" && !selectedTag)
+                                }
+                              >
+                                Apply Discount
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </>
+                  )}
+                </div>
+              </th>
+            <th className="p-3 text-left border bg-orange-50">
+              Festival Discount
+              <div className="mt-1 space-y-1">
+                <select
+                  value={festivalDiscountMode}
+                  onChange={(e) => setFestivalDiscountMode(e.target.value)}
+                  className="border rounded p-1 w-full text-sm"
+                >
+                  <option value="none">None</option>
+                  <option value="all">All</option>
+                  <option value="custom">Custom</option>
+                  <option value="category">By Category</option>
+                  <option value="tag">By Tag</option>
+                </select>
+
+                {(festivalDiscountMode === "category" || festivalDiscountMode === "tag") && (
+                  <select
+                    value={
+                      festivalDiscountMode === "category"
+                        ? festivalSelectedCategory
+                        : festivalSelectedTag
+                    }
+                    onChange={(e) =>
+                      festivalDiscountMode === "category"
+                        ? setFestivalSelectedCategory(e.target.value)
+                        : setFestivalSelectedTag(e.target.value)
+                    }
+                    className="border rounded p-1 w-full text-sm"
+                  >
+                    <option value="">Select</option>
+                    {(festivalDiscountMode === "category" ? categories : tags).map((v, i) => (
+                      <option key={i} value={v}>
+                        {v}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                              {/* Date Range (Vertical layout) */}
+                <div className="flex flex-col gap-1">
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">From</label>
+                    <input
+                      type="date"
+                      value={festivalFromDate}
+                      onChange={(e) => setFestivalFromDate(e.target.value)}
+                      className="border rounded p-1 w-full text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-500 mb-1">To</label>
+                    <input
+                      type="date"
+                      value={festivalToDate}
+                      onChange={(e) => setFestivalToDate(e.target.value)}
+                      className="border rounded p-1 w-full text-sm"
+                    />
+                  </div>
+                </div>
+                {festivalDiscountMode !== "custom" && (
+                  <>
+                    <div className="flex gap-1">
+                      <input
+                        type="number"
+                        placeholder="Value"
+                        value={festivalDiscountValue}
+                        onChange={(e) => setFestivalDiscountValue(e.target.value)}
+                        className="border rounded p-1 w-2/3 text-sm"
+                      />
+                      <select
+                        value={festivalDiscountType}
+                        onChange={(e) => setFestivalDiscountType(e.target.value)}
+                        className="border rounded p-1 w-1/3 text-sm"
+                      >
+                        <option value="%">%</option>
+                        <option value="₹">₹</option>
+                      </select>
+                    </div>
+
+                    {festivalActiveDiscount ? (
+                      <Button
+                        onClick={removeFestivalDiscount}
+                        variant="destructive"
+                        className="w-full"
+                        size="sm"
+                      >
+                        Remove
+                      </Button>
                     ) : (
-                      "-"
+                      <Button onClick={applyFestivalDiscount} className="w-full" size="sm">
+                        Apply
+                      </Button>
                     )}
-                  </TableCell>
-                  <TableCell>
-                    {p.festivalDiscount ? (
-                      <span>
-                        {p.festivalDiscount.type === "percent"
-                          ? `${p.festivalDiscount.value}%`
-                          : `₹${p.festivalDiscount.value}`}
-                      </span>
-                    ) : (
-                      "-"
+                  </>
+                )}
+              </div>
+            </th>
+
+                    {/* 🟢 Modified Price Column */}
+            <th className="p-3 text-left border bg-blue-50">Modified Price</th>
+
+            <th className="p-3 text-left border">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtered.length > 0 ? (
+              filtered.map((p, index) => (
+                <tr
+                  key={p.id}
+                  className={`hover:bg-gray-50 ${
+                    // highlight if this product has discountedPrice
+                    p.discountedPrice ? "bg-emerald-50" : ""
+                  }`}
+                >
+                  <td className="p-3 border">{index + 1}</td>
+                  <td className="p-3 border">{p.productName }</td>
+                  <td className="p-3 border">{p.sku}</td>
+                  <td className="p-3 border">{p.category}</td>
+                  <td className="p-3 border">{p.tag}</td>
+                  <td className="p-3 border">{p.totalUnits}</td>
+                  <td className="p-3 border text-center">
+                      {/* ✅ Case 1: Festival + Regular Discount both applied */}
+                      {p.discountedPrice && p.festivaldiscountPrice ? (
+                        <div className="flex flex-col items-center">
+                          <span className="text-gray-500 line-through text-sm">
+                            ₹{Number(p.price).toFixed(2)}
+                          </span>
+                          <span className="text-green-700 font-semibold text-sm">
+                            ₹{Number(p.discountedPrice).toFixed(2)} {/* Regular Discount */}
+                          </span>
+                          <span className="text-orange-700 font-semibold text-base">
+                            ₹{Number(p.festivaldiscountPrice).toFixed(2)} {/* Festival Discount */}
+                          </span>
+                        </div>
+                      ) : p.festivaldiscountPrice ? (
+                        /* ✅ Case 2: Only Festival Discount */
+                        <div className="flex flex-col items-center">
+                          <span className="text-gray-500 line-through text-sm">
+                            ₹{Number(p.price).toFixed(2)}
+                          </span>
+                          <span className="text-orange-700 font-semibold text-base">
+                            ₹{Number(p.festivaldiscountPrice).toFixed(2)}
+                          </span>
+                        </div>
+                      ) : p.discountedPrice ? (
+                        /* ✅ Case 3: Only Regular Discount */
+                        <div className="flex flex-col items-center">
+                          <span className="text-gray-500 line-through text-sm">
+                            ₹{Number(p.price).toFixed(2)}
+                          </span>
+                          <span className="text-green-700 font-semibold text-base">
+                            ₹{Number(p.discountedPrice).toFixed(2)}
+                          </span>
+                        </div>
+                      ) : (
+                        /* ✅ Case 4: No Discount */
+                        <span>₹{Number(p.price).toFixed(2)}</span>
+                      )}
+                    </td>
+
+
+                  {/* Custom discount row */}
+                  <td className="p-3 border">
+                    {discountMode === "custom" && (
+                      <div className="flex flex-col gap-1">
+                        <div className="flex gap-1">
+                          <input
+                            type="number"
+                            placeholder="Value"
+                            value={rowDiscountValues[p.id] || ""}
+                            onChange={(e) =>
+                              setRowDiscountValues({
+                                ...rowDiscountValues,
+                                [p.id]: e.target.value,
+                              })
+                            }
+                            className="border rounded p-1 text-sm w-2/3"
+                          />
+                          <select
+                            value={rowDiscountTypes[p.id] || "%"}
+                            onChange={(e) =>
+                              setRowDiscountTypes({
+                                ...rowDiscountTypes,
+                                [p.id]: e.target.value,
+                              })
+                            }
+                            className="border rounded p-1 text-sm w-1/3"
+                          >
+                            <option value="%">%</option>
+                            <option value="₹">₹</option>
+                          </select>
+                        </div>
+
+                        {!rowActiveDiscounts[p.id] ? (
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => applyRowDiscount(p)}
+                          >
+                            Apply
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="w-full"
+                            onClick={() => removeRowDiscount(p)}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </div>
                     )}
-                  </TableCell>
-                  <TableCell className="text-center">{p.totalUnits}</TableCell>
-                  <TableCell className="text-center">
-                    <Badge
-                      variant={p.isActive === "ACTIVE" ? "default" : "secondary"}
-                      className="capitalize"
-                    >
-                      {p.isActive.toLowerCase()}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 mr-2"
-                      onClick={() => handleEdit(p)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => handleDelete(p.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
+                  </td>
+                  {/* 🟣 Festival Discount Column (Custom Mode Support) */}
+                        <td className="p-3 border text-center bg-orange-50">
+                          {festivalDiscountMode === "custom" ? (
+                            <div className="flex flex-col items-center gap-1">
+                              {/* Input value */}
+                              <input
+                                type="number"
+                                className="w-20 border rounded p-1 text-sm text-center"
+                                placeholder="Value"
+                                value={festivalRowValues[p.id] || ""}
+                                disabled={festivalRowActive[p.id]}
+                                onChange={(e) =>
+                                  setFestivalRowValues((prev) => ({
+                                    ...prev,
+                                    [p.id]: e.target.value,
+                                  }))
+                                }
+                              />
+
+                              {/* Type selector */}
+                              <select
+                                className="border rounded p-1 text-sm"
+                                value={festivalRowTypes[p.id] || "%"}
+                                disabled={festivalRowActive[p.id]}
+                                onChange={(e) =>
+                                  setFestivalRowTypes((prev) => ({
+                                    ...prev,
+                                    [p.id]: e.target.value,
+                                  }))
+                                }
+                              >
+                                <option value="%">%</option>
+                                <option value="₹">₹</option>
+                              </select>
+
+                              {/* Apply / Remove button */}
+                              <Button
+                                size="sm"
+                                variant={festivalRowActive[p.id] ? "destructive" : "default"}
+                                className="mt-1 text-xs"
+                                onClick={() =>
+                                  handleToggleFestivalDiscountRow(p.id)
+                                }
+                              >
+                                {festivalRowActive[p.id] ? "Remove" : "Apply"}
+                              </Button>
+                            </div>
+                          ) : (
+                            // Non-custom mode (category/tag/all)
+                            <>
+                              {p.festivaldiscountPrice
+                                ? "Applied"
+                                : <span className="text-gray-400 italic">None</span>}
+                            </>
+                          )}
+                       </td>
+
+
+                {/* 🟢 Modified Price */}
+                  <td className="p-3 border text-center bg-blue-50 font-semibold">
+                    {p.festivaldiscountPrice
+                      ? `₹${p.festivaldiscountPrice.toFixed(2)}`
+                      : p.discountedPrice
+                      ? `₹${p.discountedPrice.toFixed(2)}`
+                      : `₹${p.price.toFixed(2)}`}
+                  </td>
+
+                {/* Actions */}
+                <td className="p-3 border flex gap-2 justify-center">
+                  <Button size="sm" variant="outline" onClick={() => onEdit(p)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => handleDelete(p.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan={11} className="text-center p-4 border text-gray-500">
+                  No products found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

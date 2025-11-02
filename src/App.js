@@ -1,0 +1,33 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Register from "./components/forms/register";
+import Login from "./components/forms/login";
+import ForgotPassword from "./pages/ForgotPassword";
+import VerifyOtp from "./pages/VerifyOtp";
+import ResetPassword from "./pages/ResetPassword";
+import AdminRoute from "./components/AdminRoute";
+import AdminDashboard from "./pages/AdminDashboard";
+import { AuthProvider } from "@/context/AuthContext";
+import CartPage from "./pages/CartPage";
+import OrdersPage from "./pages/OrdersPage";
+import { CartProvider } from "./context/CartContext";
+// --- Combined Imports ---
+import ContactUs from "./pages/ContactUs";
+import AboutUs from "./pages/AboutUs";
+import Reviews from "./pages/Reviews";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import ShippingPolicy from "./pages/ShippingPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import FAQ from "./pages/FAQ";
+import ProductDetail from "./components/product/ProductDetail";
+import ScrollToTop from "./components/ScrollToTop";
+// --- End Combined Imports ---
+const queryClient = new QueryClient();
+const App = () => (_jsx(QueryClientProvider, { client: queryClient, children: _jsxs(TooltipProvider, { children: [_jsx(Toaster, {}), _jsx(Sonner, {}), _jsx(BrowserRouter, { children: _jsx(AuthProvider, { children: _jsxs(CartProvider, { children: [_jsx(ScrollToTop, {}), _jsx("div", { className: "page-animation fade-in slide-up", children: _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(Index, {}) }), _jsx(Route, { path: "/register", element: _jsx(Register, {}) }), _jsx(Route, { path: "/forgot-password", element: _jsx(ForgotPassword, {}) }), _jsx(Route, { path: "/verify-otp", element: _jsx(VerifyOtp, {}) }), _jsx(Route, { path: "/reset-password", element: _jsx(ResetPassword, {}) }), _jsx(Route, { path: "/admin", element: _jsx(AdminRoute, { element: _jsx(AdminDashboard, {}) }) }), _jsx(Route, { path: "/login", element: _jsx(Login, {}) }), _jsx(Route, { path: "/cart", element: _jsx(CartPage, {}) }), _jsx(Route, { path: "/orders", element: _jsx(OrdersPage, {}) }), _jsx(Route, { path: "/contact", element: _jsx(ContactUs, {}) }), _jsx(Route, { path: "/reviews", element: _jsx(Reviews, {}) }), _jsx(Route, { path: "/about", element: _jsx(AboutUs, {}) }), _jsx(Route, { path: "/privacy-policy", element: _jsx(PrivacyPolicy, {}) }), _jsx(Route, { path: "/shipping-policy", element: _jsx(ShippingPolicy, {}) }), _jsx(Route, { path: "/terms-of-service", element: _jsx(TermsOfService, {}) }), _jsx(Route, { path: "/faq", element: _jsx(FAQ, {}) }), _jsx(Route, { path: "/product/:id", element: _jsx(ProductDetail, {}) }), _jsx(Route, { path: "*", element: _jsx(NotFound, {}) })] }) })] }) }) })] }) }));
+export default App;
