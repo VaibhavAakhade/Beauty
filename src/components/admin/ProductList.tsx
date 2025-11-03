@@ -83,12 +83,23 @@ const [tagDiscountDetails, setTagDiscountDetails] = useState<
   const [festivalRowActive, setFestivalRowActive] = useState<{ [key: number]: boolean }>({});
   const [festivalFromDate, setFestivalFromDate] = useState("");
   const [festivalToDate, setFestivalToDate] = useState("");
-  
+  const [showRegularDiscount, setShowRegularDiscount] = useState(true);
+  const [showFestivalDiscount, setShowFestivalDiscount] = useState(true);
   // Track applied discounts by category/tag
   const [appliedDiscounts, setAppliedDiscounts] = useState<{
     categories: Record<string, boolean>;
     tags: Record<string, boolean>;
   }>({ categories: {}, tags: {} });
+
+    // Track applied Festival Discounts by mode
+  const [appliedFestivalDiscounts, setAppliedFestivalDiscounts] = useState<{
+    all?: { value: number; type: string };
+    categories: Record<string, { value: number; type: string }>;
+    tags: Record<string, { value: number; type: string }>;
+  }>({
+    categories: {},
+    tags: {},
+  });
 
   // Row-wise custom discount input
   const [rowDiscountValues, setRowDiscountValues] = useState<{ [key: number]: string }>({});
@@ -346,57 +357,124 @@ const removeDiscount = () => {
   };
   // 🎉 Apply Festival Discount
 const applyFestivalDiscount = () => {
+  if (!showFestivalDiscount) return; // ⛔ don’t apply if checkbox off
   if (!festivalDiscountValue) return alert("Please enter discount value");
 
   const val = Number(festivalDiscountValue);
+  let appliedCategory = "";
+  let appliedTag = "";
+
   const updated = filtered.map((p) => {
     let eligible = false;
-    if (festivalDiscountMode === "all") eligible = true;
-    else if (festivalDiscountMode === "category" && p.category === festivalSelectedCategory)
+
+    if (festivalDiscountMode === "all") {
       eligible = true;
-    else if (festivalDiscountMode === "tag" && p.tag === festivalSelectedTag)
+    } else if (festivalDiscountMode === "category" && p.category === festivalSelectedCategory) {
       eligible = true;
+      appliedCategory = festivalSelectedCategory;
+    } else if (festivalDiscountMode === "tag" && p.tag === festivalSelectedTag) {
+      eligible = true;
+      appliedTag = festivalSelectedTag;
+    }
 
     if (eligible) {
       const discounted =
         festivalDiscountType === "%"
           ? p.price - (p.price * val) / 100
           : p.price - val;
-      return { ...p, festivalPrice: Math.max(0, discounted) };
+
+      return { ...p, festivaldiscountPrice: Math.max(0, discounted) };
     }
+
     return p;
   });
 
+  // ✅ Update applied discount state
   setFiltered(updated);
   setFestivalActiveDiscount(true);
+
+  setAppliedFestivalDiscounts((prev) => ({
+    ...prev,
+    all: festivalDiscountMode === "all" ? { value: val, type: festivalDiscountType } : prev.all,
+    categories:
+      festivalDiscountMode === "category"
+        ? { ...prev.categories, [appliedCategory]: { value: val, type: festivalDiscountType } }
+        : prev.categories,
+    tags:
+      festivalDiscountMode === "tag"
+        ? { ...prev.tags, [appliedTag]: { value: val, type: festivalDiscountType } }
+        : prev.tags,
+  }));
 };
 
-// ❌ Remove Festival Discount
+
+// ❌ Remove Festival Discount (category or tag specific)
 const removeFestivalDiscount = () => {
+  if (!showFestivalDiscount) return; // don’t remove if checkbox off
+
   const reset = filtered.map((p) => {
-    const { festivaldiscountPrice, ...rest } = p;
-    return rest as UIProduct;
+    let shouldRemove = false;
+
+    if (festivalDiscountMode === "all") shouldRemove = true;
+    else if (festivalDiscountMode === "category" && p.category === festivalSelectedCategory)
+      shouldRemove = true;
+    else if (festivalDiscountMode === "tag" && p.tag === festivalSelectedTag)
+      shouldRemove = true;
+
+    if (shouldRemove) {
+      const { festivaldiscountPrice, ...rest } = p;
+      return rest as UIProduct;
+    }
+
+    return p;
   });
+
+  // ✅ Update UI & state cleanup
   setFiltered(reset);
   setFestivalActiveDiscount(false);
-  setFestivalDiscountValue("");
+
+  setAppliedFestivalDiscounts((prev) => {
+    const updated = { ...prev };
+
+    if (festivalDiscountMode === "all") updated.all = undefined;
+    else if (festivalDiscountMode === "category" && festivalSelectedCategory)
+      delete updated.categories[festivalSelectedCategory];
+    else if (festivalDiscountMode === "tag" && festivalSelectedTag)
+      delete updated.tags[festivalSelectedTag];
+
+    return updated;
+  });
 };
+
 
 // 🎯 Row-wise Festival Discount
 const applyFestivalRowDiscount = (p: UIProduct) => {
+  // ✅ Skip applying if checkbox not ticked
+  if (!showFestivalDiscount) return;
+
   const val = Number(festivalRowValues[p.id] || 0);
   const type = festivalRowTypes[p.id] || "%";
+
   if (!val) return alert("Enter festival discount value");
 
-  const discounted = type === "%" ? p.price - (p.price * val) / 100 : p.price - val;
+  const discounted =
+    type === "%" ? p.price - (p.price * val) / 100 : p.price - val;
+
   const updated = filtered.map((item) =>
-    item.id === p.id ? { ...item, festivalPrice: Math.max(0, discounted) } : item
+    item.id === p.id
+      ? { ...item, festivaldiscountPrice: Math.max(0, discounted) }
+      : item
   );
+
   setFiltered(updated);
   setFestivalRowActive({ ...festivalRowActive, [p.id]: true });
 };
 
+
 const removeFestivalRowDiscount = (p: UIProduct) => {
+  // ✅ Skip removing if checkbox not ticked
+  if (!showFestivalDiscount) return;
+
   const updated = filtered.map((item) => {
     if (item.id === p.id) {
       const { festivaldiscountPrice, ...rest } = item;
@@ -404,17 +482,18 @@ const removeFestivalRowDiscount = (p: UIProduct) => {
     }
     return item;
   });
+
   setFiltered(updated);
   setFestivalRowActive({ ...festivalRowActive, [p.id]: false });
 };
 
-  // Helper to know if currently selected category/tag already has discount
-  const currentApplied =
-    (discountMode === "category" && selectedCategory && appliedDiscounts.categories[selectedCategory]) ||
-    (discountMode === "tag" && selectedTag && appliedDiscounts.tags[selectedTag]);
 
-  const handleToggleFestivalDiscountRow = (id: number) => {
+// 🧩 Toggle checkbox-based Festival Discount (row-wise fallback)
+const handleToggleFestivalDiscountRow = (id: number) => {
+  if (!showFestivalDiscount) return; // ✅ Ignore if checkbox unchecked
+
   const isActive = festivalRowActive[id];
+
   if (isActive) {
     // 🟥 Remove discount
     setFestivalRowActive((prev) => ({ ...prev, [id]: false }));
@@ -558,133 +637,154 @@ const removeFestivalRowDiscount = (p: UIProduct) => {
                 </select>
               </th>
 
-              {/* Discount Header */}
-              <th className="p-3 text-left border">
-                Regular Discount
-                <div className="mt-1 space-y-1">
-                  <select
-                    value={discountMode}
-                    onChange={(e) => setDiscountMode(e.target.value)}
-                    className="border rounded p-1 w-full text-sm"
-                  >
-                    <option value="none">None</option>
-                    <option value="all">All</option>
-                    <option value="custom">Custom</option>
-                    <option value="category">By Category</option>
-                    <option value="tag">By Tag</option>
-                  </select>
+              {/* Regular Discount Header */}
+                <th className="p-3 text-left border align-top">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={showRegularDiscount}
+                      onChange={(e) => setShowRegularDiscount(e.target.checked)}
+                    />
+                    <span>Regular Discount</span>
+                  </label>
 
-                  {(discountMode === "category" || discountMode === "tag") && (
+                  <fieldset
+                    disabled={!showRegularDiscount}
+                    className={`mt-1 space-y-1 transition-opacity duration-200 ${
+                      !showRegularDiscount ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
                     <select
-                      value={
-                        discountMode === "category"
-                          ? selectedCategory
-                          : selectedTag
-                      }
-                      onChange={(e) =>
-                        discountMode === "category"
-                          ? setSelectedCategory(e.target.value)
-                          : setSelectedTag(e.target.value)
-                      }
+                      value={discountMode}
+                      onChange={(e) => setDiscountMode(e.target.value)}
                       className="border rounded p-1 w-full text-sm"
                     >
-                      <option value="">Select</option>
-                      {(discountMode === "category" ? categories : tags).map(
-                        (v, i) => (
+                      <option value="none">None</option>
+                      <option value="all">All</option>
+                      <option value="custom">Custom</option>
+                      <option value="category">By Category</option>
+                      <option value="tag">By Tag</option>
+                    </select>
+
+                    {(discountMode === "category" || discountMode === "tag") && (
+                      <select
+                        value={discountMode === "category" ? selectedCategory : selectedTag}
+                        onChange={(e) =>
+                          discountMode === "category"
+                            ? setSelectedCategory(e.target.value)
+                            : setSelectedTag(e.target.value)
+                        }
+                        className="border rounded p-1 w-full text-sm"
+                      >
+                        <option value="">Select</option>
+                        {(discountMode === "category" ? categories : tags).map((v, i) => (
                           <option key={i} value={v}>
                             {v}
                           </option>
-                        )
-                      )}
-                    </select>
-                  )}
+                        ))}
+                      </select>
+                    )}
 
-                  {discountMode !== "custom" && (
-                    <>
-                      <div className="flex gap-1">
-                        <input
-                          type="number"
-                          placeholder="Value"
-                          value={discountValue}
-                          onChange={(e) => setDiscountValue(e.target.value)}
-                          className="border rounded p-1 w-2/3 text-sm"
-                        />
-                        <select
-                          value={discountType}
-                          onChange={(e) => setDiscountType(e.target.value)}
-                          className="border rounded p-1 w-1/3 text-sm"
-                        >
-                          <option value="%">%</option>
-                          <option value="₹">₹</option>
-                        </select>
-                      </div>
+                    {discountMode !== "custom" && (
+                      <>
+                        <div className="flex gap-1">
+                          <input
+                            type="number"
+                            placeholder="Value"
+                            value={discountValue}
+                            onChange={(e) => setDiscountValue(e.target.value)}
+                            className="border rounded p-1 w-2/3 text-sm"
+                          />
+                          <select
+                            value={discountType}
+                            onChange={(e) => setDiscountType(e.target.value)}
+                            className="border rounded p-1 w-1/3 text-sm"
+                          >
+                            <option value="%">%</option>
+                            <option value="₹">₹</option>
+                          </select>
+                        </div>
 
-                      {(() => {
-                        let alreadyApplied = false;
-                        let appliedInfo: { value: string; type: string } | undefined;
+                        {(() => {
+                          let alreadyApplied = false;
+                          let appliedInfo: { value: string; type: string } | undefined;
 
-                        if (discountMode === "all" && appliedDiscounts.all) {
-                          alreadyApplied = true;
-                          appliedInfo = activeRegularDetails;
-                        } else if (
-                          discountMode === "category" &&
-                          selectedCategory &&
-                          appliedDiscounts.categories[selectedCategory]
-                        ) {
-                          alreadyApplied = true;
-                          appliedInfo = categoryDiscountDetails[selectedCategory];
-                        } else if (
-                          discountMode === "tag" &&
-                          selectedTag &&
-                          appliedDiscounts.tags[selectedTag]
-                        ) {
-                          alreadyApplied = true;
-                          appliedInfo = tagDiscountDetails[selectedTag];
-                        }
+                          if (discountMode === "all" && appliedDiscounts.all) {
+                            alreadyApplied = true;
+                            appliedInfo = activeRegularDetails;
+                          } else if (
+                            discountMode === "category" &&
+                            selectedCategory &&
+                            appliedDiscounts.categories[selectedCategory]
+                          ) {
+                            alreadyApplied = true;
+                            appliedInfo = categoryDiscountDetails[selectedCategory];
+                          } else if (
+                            discountMode === "tag" &&
+                            selectedTag &&
+                            appliedDiscounts.tags[selectedTag]
+                          ) {
+                            alreadyApplied = true;
+                            appliedInfo = tagDiscountDetails[selectedTag];
+                          }
 
-                        return (
-                          <div className="flex flex-col items-center">
-                            {alreadyApplied ? (
-                              <>
+                          return (
+                            <div className="flex flex-col items-center">
+                              {alreadyApplied ? (
+                                <>
+                                  <Button
+                                    onClick={removeDiscount}
+                                    variant="destructive"
+                                    className="w-full bg-red-600 hover:bg-red-700"
+                                    size="sm"
+                                  >
+                                    Remove Discount
+                                  </Button>
+                                  {appliedInfo && (
+                                    <div className="text-xs text-gray-600 mt-1 text-center">
+                                      🟢 Discount Applied:&nbsp;
+                                      {appliedInfo.value}
+                                      {appliedInfo.type}
+                                    </div>
+                                  )}
+                                </>
+                              ) : (
                                 <Button
-                                  onClick={removeDiscount}
-                                  variant="destructive"
-                                  className="w-full bg-red-600 hover:bg-red-700"
+                                  onClick={applyDiscount}
+                                  className="w-full bg-green-600 hover:bg-green-700"
                                   size="sm"
+                                  disabled={
+                                    (discountMode === "category" && !selectedCategory) ||
+                                    (discountMode === "tag" && !selectedTag)
+                                  }
                                 >
-                                  Remove Discount
+                                  Apply Discount
                                 </Button>
-                                {appliedInfo && (
-                                  <div className="text-xs text-gray-600 mt-1 text-center">
-                                    🟢 Discount Applied:&nbsp;
-                                    {appliedInfo.value}
-                                    {appliedInfo.type}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <Button
-                                onClick={applyDiscount}
-                                className="w-full bg-green-600 hover:bg-green-700"
-                                size="sm"
-                                disabled={
-                                  (discountMode === "category" && !selectedCategory) ||
-                                  (discountMode === "tag" && !selectedTag)
-                                }
-                              >
-                                Apply Discount
-                              </Button>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </>
-                  )}
-                </div>
-              </th>
-            <th className="p-3 text-left border bg-orange-50">
-              Festival Discount
-              <div className="mt-1 space-y-1">
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </>
+                    )}
+                  </fieldset>
+                </th>
+                 {/* Festival Discount Header */}
+            <th className="p-3 text-left border bg-orange-50 align-top">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showFestivalDiscount}
+                  onChange={(e) => setShowFestivalDiscount(e.target.checked)}
+                />
+                <span>Festival Discount</span>
+              </label>
+
+              <fieldset
+                disabled={!showFestivalDiscount}
+                className={`mt-1 space-y-1 transition-opacity duration-200 ${
+                  !showFestivalDiscount ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
                 <select
                   value={festivalDiscountMode}
                   onChange={(e) => setFestivalDiscountMode(e.target.value)}
@@ -720,7 +820,6 @@ const removeFestivalRowDiscount = (p: UIProduct) => {
                   </select>
                 )}
 
-                              {/* Date Range (Vertical layout) */}
                 <div className="flex flex-col gap-1">
                   <div>
                     <label className="block text-xs text-gray-500 mb-1">From</label>
@@ -741,6 +840,7 @@ const removeFestivalRowDiscount = (p: UIProduct) => {
                     />
                   </div>
                 </div>
+
                 {festivalDiscountMode !== "custom" && (
                   <>
                     <div className="flex gap-1">
@@ -761,23 +861,68 @@ const removeFestivalRowDiscount = (p: UIProduct) => {
                       </select>
                     </div>
 
-                    {festivalActiveDiscount ? (
-                      <Button
-                        onClick={removeFestivalDiscount}
-                        variant="destructive"
-                        className="w-full"
-                        size="sm"
-                      >
-                        Remove
-                      </Button>
-                    ) : (
-                      <Button onClick={applyFestivalDiscount} className="w-full" size="sm">
-                        Apply
-                      </Button>
-                    )}
+                    {(() => {
+                      let alreadyApplied = false;
+                      let appliedInfo: { value: number; type: string } | undefined;
+
+                      if (festivalDiscountMode === "all" && appliedFestivalDiscounts.all) {
+                        alreadyApplied = true;
+                        appliedInfo = appliedFestivalDiscounts.all;
+                      } else if (
+                        festivalDiscountMode === "category" &&
+                        festivalSelectedCategory &&
+                        appliedFestivalDiscounts.categories[festivalSelectedCategory]
+                      ) {
+                        alreadyApplied = true;
+                        appliedInfo =
+                          appliedFestivalDiscounts.categories[festivalSelectedCategory];
+                      } else if (
+                        festivalDiscountMode === "tag" &&
+                        festivalSelectedTag &&
+                        appliedFestivalDiscounts.tags[festivalSelectedTag]
+                      ) {
+                        alreadyApplied = true;
+                        appliedInfo = appliedFestivalDiscounts.tags[festivalSelectedTag];
+                      }
+
+                      return (
+                        <div className="flex flex-col items-center">
+                          {alreadyApplied ? (
+                            <>
+                              <Button
+                                onClick={removeFestivalDiscount}
+                                variant="destructive"
+                                className="w-full bg-red-600 hover:bg-red-700"
+                                size="sm"
+                              >
+                                Remove Discount
+                              </Button>
+                              {appliedInfo && (
+                                <div className="text-xs text-gray-600 mt-1 text-center">
+                                  🟢 Discount Applied: {appliedInfo.value}
+                                  {appliedInfo.type}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <Button
+                              onClick={applyFestivalDiscount}
+                              className="w-full bg-green-600 hover:bg-green-700"
+                              size="sm"
+                              disabled={
+                                (festivalDiscountMode === "category" && !festivalSelectedCategory) ||
+                                (festivalDiscountMode === "tag" && !festivalSelectedTag)
+                              }
+                            >
+                              Apply Discount
+                            </Button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </>
                 )}
-              </div>
+              </fieldset>
             </th>
 
                     {/* 🟢 Modified Price Column */}
