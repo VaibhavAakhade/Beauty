@@ -1,0 +1,71 @@
+import { jsxs as _jsxs, jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
+// src/components/Navbar.tsx
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { Menu, X, ShoppingBag, User, LogOut, Shield, HelpCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Login from "./forms/login";
+import { useAuth } from "../context/AuthContext";
+import { useCart } from "@/context/CartContext";
+const Navbar = () => {
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [showAuthModal, setShowAuthModal] = useState(false);
+    const location = useLocation();
+    const mainMenuItems = [
+        { label: "Home", path: "/", scroll: "home" },
+        { label: "Shop", path: "/", scroll: "products" },
+        { label: "About", path: "/about" },
+        { label: "Reviews", path: "/reviews" },
+        { label: "Contact", path: "/contact" },
+        { label: "FAQ", path: "/faq", icon: HelpCircle }
+    ];
+    const { cartItems = [], resetCart } = useCart(); // ✅ added resetCart
+    const cartCount = cartItems.reduce((sum, it) => sum + it.quantity, 0);
+    const { user, role, logout } = useAuth();
+    const isAuthenticated = !!user;
+    const isAdmin = role === "ADMIN";
+    useEffect(() => {
+        const handleScroll = () => setIsScrolled(window.scrollY > 20);
+        window.addEventListener("scroll", handleScroll);
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+    const scrollToSection = (id) => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth" });
+            setIsMobileMenuOpen(false);
+        }
+    };
+    const handleLoginClick = () => {
+        if (!isAuthenticated)
+            setShowAuthModal(true);
+    };
+    // ✅ Updated logout function (clears cart too)
+    const handleLogout = () => {
+        logout(); // clears token/session
+        resetCart(); // clears cart context
+    };
+    const getUserDisplayName = () => {
+        const name = user?.name;
+        if (name)
+            return name.charAt(0).toUpperCase() + name.slice(1);
+        return "Profile";
+    };
+    const AuthUserDisplay = ({ isMobile = false }) => {
+        if (isAuthenticated) {
+            return (_jsxs("div", { className: `flex items-center space-x-2 ${isMobile ? "flex-col space-y-2 w-full" : ""}`, children: [_jsxs("span", { className: `${isMobile ? "w-full text-center" : "hidden sm:inline-block"} font-semibold text-sm text-primary`, children: ["Welcome, ", getUserDisplayName(), " \u2728"] }), _jsxs(Button, { size: "sm", variant: "outline", onClick: handleLogout, className: `${isMobile ? "w-full" : ""} border-2 border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full`, children: [_jsx(LogOut, { className: "w-4 h-4 mr-2" }), "Logout"] })] }));
+        }
+        return (_jsxs(Button, { size: "sm", variant: "outline", onClick: handleLoginClick, className: `${isMobile ? "w-full" : "w-auto"} border-2 border-spacing-2 text-secondary hover:bg-secondary text-black rounded-full`, children: [_jsx(User, { className: "w-4 h-4 mr-2" }), "Login / Signup"] }));
+    };
+    return (_jsxs(_Fragment, { children: [_jsx("nav", { className: `fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isScrolled
+                    ? "bg-background/95 backdrop-blur-md shadow-soft"
+                    : "bg-transparent"}`, children: _jsxs("div", { className: "container mx-auto px-4", children: [_jsxs("div", { className: "flex items-center justify-between h-20", children: [_jsxs("div", { className: "flex items-center space-x-2", children: [_jsx("div", { className: "w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center", children: _jsx("span", { className: "text-white font-display font-bold text-xl", children: "L" }) }), _jsx("span", { className: "font-display text-2xl font-bold text-gradient", children: "Luxe Beauty" })] }), _jsxs("div", { className: "hidden md:flex items-center space-x-6", children: [mainMenuItems.map((item, index) => (item.scroll && location.pathname === "/" ? (_jsxs("button", { onClick: () => scrollToSection(item.scroll), className: "text-foreground hover:text-primary font-medium transition-colors duration-200 flex items-center gap-2", children: [item.icon && _jsx(item.icon, { className: "w-4 h-4" }), item.label] }, index)) : (_jsxs(Link, { to: item.path, className: `text-foreground hover:text-primary font-medium transition-colors duration-200 flex items-center gap-2 ${location.pathname === item.path ? "text-primary" : ""}`, onClick: () => item.scroll && scrollToSection(item.scroll), children: [item.icon && _jsx(item.icon, { className: "w-4 h-4" }), item.label] }, index)))), isAdmin && (_jsxs(Link, { to: "/admin", className: "text-primary hover:text-primary/80 border-2 border-primary/50 px-3 py-1 rounded-full text-sm flex items-center", children: [_jsx(Shield, { className: "w-4 h-4 mr-1" }), " Admin"] })), _jsxs(Link, { to: "/cart", className: "relative", children: [_jsx(ShoppingBag, { className: "w-6 h-6 text-primary" }), cartCount > 0 && (_jsx("span", { className: "absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center", children: cartCount }))] }), _jsx(AuthUserDisplay, {})] }), _jsx("button", { onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen), className: "md:hidden text-foreground p-2", children: isMobileMenuOpen ? _jsx(X, { size: 24 }) : _jsx(Menu, { size: 24 }) })] }), isMobileMenuOpen && (_jsxs("div", { className: "md:hidden py-4 space-y-4 bg-background/95 backdrop-blur-md rounded-b-2xl shadow-soft", children: [mainMenuItems.map((item, index) => (item.scroll && location.pathname === "/" ? (_jsxs("button", { onClick: () => {
+                                        scrollToSection(item.scroll);
+                                        setIsMobileMenuOpen(false);
+                                    }, className: "block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center gap-2", children: [item.icon && _jsx(item.icon, { className: "w-4 h-4" }), item.label] }, index)) : (_jsxs(Link, { to: item.path, className: `block w-full text-left px-4 py-2 text-foreground hover:text-primary hover:bg-secondary/50 transition-colors flex items-center gap-2 ${location.pathname === item.path ? "text-primary" : ""}`, onClick: () => {
+                                        setIsMobileMenuOpen(false);
+                                        item.scroll && scrollToSection(item.scroll);
+                                    }, children: [item.icon && _jsx(item.icon, { className: "w-4 h-4" }), item.label] }, index)))), isAdmin && (_jsxs(Link, { to: "/admin", onClick: () => setIsMobileMenuOpen(false), className: "block w-full text-center text-primary hover:text-primary/80 border-2 border-primary/50 px-4 py-2 rounded-full text-sm flex items-center justify-center", children: [_jsx(Shield, { className: "w-4 h-4 mr-2" }), " Admin"] })), _jsxs(Link, { to: "/cart", className: "relative block w-full text-center", children: [_jsx(ShoppingBag, { className: "w-6 h-6 mx-auto" }), cartCount > 0 && (_jsx("span", { className: "absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center", children: cartCount })), _jsx("span", { className: "text-sm mt-1 block", children: "Cart" })] }), _jsx(AuthUserDisplay, { isMobile: true })] }))] }) }), showAuthModal && (_jsx("div", { className: "fixed inset-0 z-50 flex items-center justify-center bg-black/50", children: _jsxs("div", { className: "bg-white rounded-xl p-6 w-full max-w-md relative", children: [_jsx("button", { className: "absolute top-3 right-3 text-gray-500", onClick: () => setShowAuthModal(false), children: "\u2715" }), _jsx(Login, { onClose: () => setShowAuthModal(false) })] }) }))] }));
+};
+export default Navbar;

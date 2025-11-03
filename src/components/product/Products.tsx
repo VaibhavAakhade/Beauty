@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Star } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCart } from "@/context/CartContext"; // ✅ import Cart context
-import { categoryDetails } from "@/data/CategoryDetails";
+import { categoryDetails } from "@/data/categoryDetails";
 import { Link } from "react-router-dom";
 
 interface Product {
