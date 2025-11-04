@@ -6,6 +6,14 @@ export interface Product {
     productName: string;
     description: string;
     price: number;
+    regulardiscountPrice: number;
+    festivaldiscountPrice: number;
+    festivalDiscountMeta: {
+        value: number;
+        type: string;
+        from: string;
+        to: string;
+    };
     isActive: string; // Assuming Status enum maps to these strings
     imageUrl: string;
     category: string; // Assuming Categories enum maps to these
