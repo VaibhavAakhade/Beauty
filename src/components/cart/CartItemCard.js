@@ -1,6 +1,0 @@
-import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { Button } from "@/components/ui/button";
-const CartItemCard = ({ productName, price, quantity, imageUrl, onIncrease, onDecrease, onRemove, }) => {
-    return (_jsxs("div", { className: "flex items-center justify-between border rounded-2xl p-4 shadow-sm bg-white", children: [_jsxs("div", { className: "flex items-center gap-4", children: [_jsx("img", { src: imageUrl || "/placeholder.jpg", alt: productName, className: "w-20 h-20 object-cover rounded-lg" }), _jsxs("div", { children: [_jsx("h4", { className: "font-semibold text-lg", children: productName }), _jsxs("p", { className: "text-sm text-gray-500", children: ["\u20B9", price] }), _jsxs("div", { className: "flex items-center mt-2 gap-2", children: [_jsx(Button, { size: "sm", variant: "outline", onClick: onDecrease, children: "\u2212" }), _jsx("span", { className: "text-base", children: quantity }), _jsx(Button, { size: "sm", variant: "outline", onClick: onIncrease, children: "+" })] }), onRemove && (_jsx("button", { onClick: onRemove, className: "text-xs text-red-500 mt-2 hover:underline", children: "Remove" }))] })] }), _jsxs("div", { className: "text-right font-semibold text-lg", children: ["\u20B9", (quantity * price).toFixed(2)] })] }));
-};
-export default CartItemCard;

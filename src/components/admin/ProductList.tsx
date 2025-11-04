@@ -6,6 +6,8 @@ import { Product } from "@/types/product";
 // Local UI type extends Product to include discountedPrice
 type UIProduct = Product & {
   discountedPrice?: number;
+  festivaldiscountPrice?: number;
+  modifiedPrice?: number; // ✅ Add this
 };
 
 interface ProductListProps {
@@ -105,6 +107,31 @@ const [tagDiscountDetails, setTagDiscountDetails] = useState<
   const [rowDiscountValues, setRowDiscountValues] = useState<{ [key: number]: string }>({});
   const [rowDiscountTypes, setRowDiscountTypes] = useState<{ [key: number]: string }>({});
   const [rowActiveDiscounts, setRowActiveDiscounts] = useState<{ [key: number]: boolean }>({});
+  
+
+   // ✅ Auto-recalculate modified prices when discount checkboxes toggle
+useEffect(() => {
+  if (!filtered.length) return;
+
+  const updated = filtered.map((p) => {
+    const base = p.price;
+
+    // Apply regular only if checkbox ticked and discountedPrice exists
+    const afterRegular =
+      showRegularDiscount && p.discountedPrice ? p.discountedPrice : base;
+
+    // Apply festival on top of the current regular price if checkbox ticked
+    const afterFestival =
+      showFestivalDiscount && p.festivaldiscountPrice
+        ? Math.max(0, afterRegular - (afterRegular - p.festivaldiscountPrice))
+        : afterRegular;
+
+    return { ...p, modifiedPrice: afterFestival };
+  });
+
+  setFiltered(updated);
+}, [showRegularDiscount, showFestivalDiscount, filtered.length]);
+
 
   useEffect(() => {
     fetch("http://localhost:8085/api/products")
@@ -194,6 +221,10 @@ const [tagDiscountDetails, setTagDiscountDetails] = useState<
   const categories = [...new Set(products.map((p) => p.category).filter(Boolean))];
   const tags = [...new Set(products.map((p) => p.tag).filter(Boolean))];
 
+ 
+
+
+
   // 🧮 Apply discount (global/category/tag)
 const applyDiscount = () => {
   if (!discountValue) return alert("Please enter discount value");
@@ -218,6 +249,7 @@ const applyDiscount = () => {
 
   setFiltered(updated);
   setActiveDiscount(true);
+  setFiltered((prev) => recalculateModifiedPrices(prev)); // ✅ add this
 
   // 🧩 Update discount detail storage
   if (discountMode === "category" && selectedCategory) {
@@ -250,24 +282,30 @@ const applyDiscount = () => {
 
 const removeDiscount = () => {
   if (discountMode === "all") {
-    // 🟢 Remove discount from all products
+    // 🟢 Remove all regular discounts
     const reset = filtered.map((p) => {
       const { discountedPrice, ...rest } = p;
       return rest as UIProduct;
     });
     setFiltered(reset);
+    
 
-    // 🧩 Update discount state
+    // 🧩 Reset discount states completely so header updates instantly
     setAppliedDiscounts({ categories: {}, tags: {}, all: false });
-    setRegularAppliedDiscounts({ all: false, categories: {}, tags: {} });
-    setActiveRegularDetails({ value: "", type: "%", mode: "" });
+    setRegularAppliedDiscounts({
+      all: false,
+      categories: {},
+      tags: {},
+    });
 
+    setActiveRegularDetails({ value: "", type: "%", mode: "" });
     setActiveDiscount(false);
     setDiscountValue("");
+    return;
   }
 
-  else if (discountMode === "category" && selectedCategory) {
-    // 🟠 Remove only products in this category
+  if (discountMode === "category" && selectedCategory) {
+    // 🟠 Remove only regular discounts from selected category
     const reset = filtered.map((p) => {
       if (p.category === selectedCategory) {
         const { discountedPrice, ...rest } = p;
@@ -277,14 +315,14 @@ const removeDiscount = () => {
     });
     setFiltered(reset);
 
-    // 🧩 Update UI button state
-    setAppliedDiscounts((prev) => ({
-      ...prev,
-      categories: { ...prev.categories, [selectedCategory]: false },
-    }));
+    // 🧩 Reset button state properly
     setRegularAppliedDiscounts((prev) => ({
       ...prev,
-      categories: { ...prev.categories, [selectedCategory]: false },
+      categories: {
+        ...prev.categories,
+        [selectedCategory]: false,
+      },
+      all: false, // ensures header resets if global was active
     }));
 
     setCategoryDiscountDetails((prev) => {
@@ -294,10 +332,11 @@ const removeDiscount = () => {
     });
 
     setDiscountValue("");
+    return;
   }
 
-  else if (discountMode === "tag" && selectedTag) {
-    // 🟣 Remove only products with this tag
+  if (discountMode === "tag" && selectedTag) {
+    // 🟣 Remove only regular discounts from selected tag
     const reset = filtered.map((p) => {
       if (p.tag === selectedTag) {
         const { discountedPrice, ...rest } = p;
@@ -307,14 +346,14 @@ const removeDiscount = () => {
     });
     setFiltered(reset);
 
-    // 🧩 Update UI button state
-    setAppliedDiscounts((prev) => ({
-      ...prev,
-      tags: { ...prev.tags, [selectedTag]: false },
-    }));
+    // 🧩 Reset tag state properly
     setRegularAppliedDiscounts((prev) => ({
       ...prev,
-      tags: { ...prev.tags, [selectedTag]: false },
+      tags: {
+        ...prev.tags,
+        [selectedTag]: false,
+      },
+      all: false,
     }));
 
     setTagDiscountDetails((prev) => {
@@ -326,6 +365,7 @@ const removeDiscount = () => {
     setDiscountValue("");
   }
 };
+
 
 
   // 🧩 Row-wise discount apply
@@ -392,6 +432,7 @@ const applyFestivalDiscount = () => {
   // ✅ Update applied discount state
   setFiltered(updated);
   setFestivalActiveDiscount(true);
+  setFiltered((prev) => recalculateModifiedPrices(prev)); // ✅ add this
 
   setAppliedFestivalDiscounts((prev) => ({
     ...prev,
@@ -410,67 +451,82 @@ const applyFestivalDiscount = () => {
 
 // ❌ Remove Festival Discount (category or tag specific)
 const removeFestivalDiscount = () => {
-  if (!showFestivalDiscount) return; // don’t remove if checkbox off
+  if (!showFestivalDiscount) return; // ⛔ don’t remove if checkbox off
 
-  const reset = filtered.map((p) => {
-    let shouldRemove = false;
-
-    if (festivalDiscountMode === "all") shouldRemove = true;
-    else if (festivalDiscountMode === "category" && p.category === festivalSelectedCategory)
-      shouldRemove = true;
-    else if (festivalDiscountMode === "tag" && p.tag === festivalSelectedTag)
-      shouldRemove = true;
-
-    if (shouldRemove) {
+  if (festivalDiscountMode === "all") {
+    // 🟢 Remove only festival discounts from all products
+    const reset = filtered.map((p) => {
       const { festivaldiscountPrice, ...rest } = p;
       return rest as UIProduct;
-    }
+    });
+    setFiltered(reset);
 
-    return p;
-  });
+    setAppliedFestivalDiscounts({
+      categories: {},
+      tags: {},
+    });
+    setFestivalActiveDiscount(false);
+    setFestivalDiscountValue("");
+  }
 
-  // ✅ Update UI & state cleanup
-  setFiltered(reset);
-  setFestivalActiveDiscount(false);
+  else if (festivalDiscountMode === "category" && festivalSelectedCategory) {
+    // 🟠 Remove only festival discount for selected category
+    const reset = filtered.map((p) => {
+      if (p.category === festivalSelectedCategory) {
+        const { festivaldiscountPrice, ...rest } = p;
+        return rest as UIProduct;
+      }
+      return p;
+    });
+    setFiltered(reset);
 
-  setAppliedFestivalDiscounts((prev) => {
-    const updated = { ...prev };
+    setAppliedFestivalDiscounts((prev) => {
+      const clone = { ...prev };
+      delete clone.categories[festivalSelectedCategory];
+      return clone;
+    });
 
-    if (festivalDiscountMode === "all") updated.all = undefined;
-    else if (festivalDiscountMode === "category" && festivalSelectedCategory)
-      delete updated.categories[festivalSelectedCategory];
-    else if (festivalDiscountMode === "tag" && festivalSelectedTag)
-      delete updated.tags[festivalSelectedTag];
+    setFestivalDiscountValue("");
+  }
 
-    return updated;
+  else if (festivalDiscountMode === "tag" && festivalSelectedTag) {
+    // 🟣 Remove only festival discount for selected tag
+    const reset = filtered.map((p) => {
+      if (p.tag === festivalSelectedTag) {
+        const { festivaldiscountPrice, ...rest } = p;
+        return rest as UIProduct;
+      }
+      return p;
+    });
+    setFiltered(reset);
+
+    setAppliedFestivalDiscounts((prev) => {
+      const clone = { ...prev };
+      delete clone.tags[festivalSelectedTag];
+      return clone;
+    });
+
+    setFestivalDiscountValue("");
+  }
+};
+// 🧮 Helper: Recalculate Modified Price when either discount type is toggled
+const recalculateModifiedPrices = (list: UIProduct[]) => {
+  return list.map((p) => {
+    const base = p.price;
+
+    const afterRegular =
+      showRegularDiscount && p.discountedPrice ? p.discountedPrice : base;
+
+    const afterFestival =
+      showFestivalDiscount && p.festivaldiscountPrice
+        ? Math.max(0, afterRegular - (afterRegular - p.festivaldiscountPrice))
+        : afterRegular;
+
+    return { ...p, modifiedPrice: afterFestival };
   });
 };
 
-
-// 🎯 Row-wise Festival Discount
-const applyFestivalRowDiscount = (p: UIProduct) => {
-  // ✅ Skip applying if checkbox not ticked
-  if (!showFestivalDiscount) return;
-
-  const val = Number(festivalRowValues[p.id] || 0);
-  const type = festivalRowTypes[p.id] || "%";
-
-  if (!val) return alert("Enter festival discount value");
-
-  const discounted =
-    type === "%" ? p.price - (p.price * val) / 100 : p.price - val;
-
-  const updated = filtered.map((item) =>
-    item.id === p.id
-      ? { ...item, festivaldiscountPrice: Math.max(0, discounted) }
-      : item
-  );
-
-  setFiltered(updated);
-  setFestivalRowActive({ ...festivalRowActive, [p.id]: true });
-};
-
-
+// ❌ Remove Festival Discount (row-wise fallback)
 const removeFestivalRowDiscount = (p: UIProduct) => {
   // ✅ Skip removing if checkbox not ticked
   if (!showFestivalDiscount) return;
@@ -534,6 +590,7 @@ const handleToggleFestivalDiscountRow = (id: number) => {
     );
   }
 };
+
 
 
   return (
@@ -1099,15 +1156,44 @@ const handleToggleFestivalDiscountRow = (id: number) => {
                           )}
                        </td>
 
+                        {/* 🟢 Modified Price */}
+                            <td className="p-3 border text-center bg-blue-50 font-semibold">
+                              {(() => {
+                                const base = p.price || 0;
 
-                {/* 🟢 Modified Price */}
-                  <td className="p-3 border text-center bg-blue-50 font-semibold">
-                    {p.festivaldiscountPrice
-                      ? `₹${p.festivaldiscountPrice.toFixed(2)}`
-                      : p.discountedPrice
-                      ? `₹${p.discountedPrice.toFixed(2)}`
-                      : `₹${p.price.toFixed(2)}`}
-                  </td>
+                                // Regular discount
+                                let regDisc = 0;
+                                if (includeRegular) {
+                                  if (p.discountedPrice && p.discountedPrice < base) {
+                                    regDisc = base - p.discountedPrice;
+                                  } else if (rowActiveDiscounts[p.id]) {
+                                    const val = Number(rowDiscountValues[p.id] || 0);
+                                    const type = rowDiscountTypes[p.id] || "%";
+                                    regDisc = type === "%" ? (base * val) / 100 : val;
+                                  }
+                                }
+
+                                // Festival discount
+                                let festDisc = 0;
+                                if (includeFestival) {
+                                  if (p.festivaldiscountPrice && p.festivaldiscountPrice < base) {
+                                    festDisc = base - p.festivaldiscountPrice;
+                                  } else if (festivalRowActive[p.id]) {
+                                    const val = Number(festivalRowValues[p.id] || 0);
+                                    const type = festivalRowTypes[p.id] || "%";
+                                    festDisc = type === "%" ? (base * val) / 100 : val;
+                                  }
+                                }
+
+                                // ✅ Combine both discounts additively on base price
+                                const totalDiscount = regDisc + festDisc;
+                                const modified = Math.max(base - totalDiscount, 0);
+
+                                return `₹${modified.toFixed(2)}`;
+                              })()}
+                            </td>
+
+
 
                 {/* Actions */}
                 <td className="p-3 border flex gap-2 justify-center">

@@ -107,7 +107,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-<<<<<<< HEAD
                 <Link to="/blog" className="hover:text-primary transition-colors">
                   Beauty Blog
                 </Link>
@@ -118,8 +117,6 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-=======
->>>>>>> discountfeature
                 <Link to="/reviews" className="hover:text-primary transition-colors">
                   Reviews
                 </Link>
